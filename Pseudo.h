@@ -17,7 +17,6 @@ class Pseudo
 		Font& getFont() { return this->text; }
 		SDL_Texture* getTexture() { return text.getTexture(); }
 
-		void updatePos(int x, int y) { this->pos.x = x; this->pos.y = y; }
 		void draw(SDL_Renderer* renderer, int x, int y);
 
 	private:

@@ -7,6 +7,7 @@ Character::Character(std::string name, int category, SDL_Window* window, SDL_Ren
 
 void Character::draw(SDL_Renderer* renderer)
 {
+	//cout << getPseudoX() << " : " << getPseudoY() << endl;
 	pseudo.draw(renderer, getPseudoX(), getPseudoY());
 	SDL_RenderCopy(renderer, text[animationID][dir][step], NULL, &this->pos);
 }

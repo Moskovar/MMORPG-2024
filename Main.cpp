@@ -12,6 +12,7 @@
 #include "Warrior.h"
 #include "Building.h"
 #include "QuestBook.h"
+#include "Quest.h"
 #include "Font.h"
 
 using namespace std;
@@ -53,7 +54,7 @@ void t_run_aa(AutoAttack* spell, Entity* e)
     {
         spell->run(*v_elements[1], *e, cameraLock);
         if (e->getCountDir() == 0) e->setMoving(false);
-        for (int p = 0; p < 1000; p++)//METTRE UN DELTATIME POUR QUE LA PAUSE SOIT SAME POUR TLM
+        for (int p = 0; p < 1000; p++)
         {
             if (e->getCancelAA()) break;
             Sleep(1);
@@ -62,7 +63,7 @@ void t_run_aa(AutoAttack* spell, Entity* e)
     e->setAAActive(false);
 }
 
-void t_update_camera()//revoir les paramètres des threads alors que variables globales
+void t_update_camera()
 {
     while (run)
     {
@@ -119,6 +120,7 @@ int main(int argc, char* argv[])
     Warrior w("Titus", uti::Category::PLAYER, window, renderer);
     Building b(0, 0, 1000, 672, renderer, "tavern");
     QuestBook qb(850, 200, renderer);
+    qb.addQuest(new Quest("First quest", "First quest in the world", 100, window, renderer));
 
     v_elements[0]->push_back(dynamic_cast<Element*>(&w));
     v_elements[1]->push_back(dynamic_cast<Element*>(&b));
@@ -135,7 +137,6 @@ int main(int argc, char* argv[])
     // Activer la capture de la souris dans la fenêtre
     SDL_SetWindowGrab(window, SDL_TRUE);
     //SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);    
-
     while (run) 
     {
         while (SDL_PollEvent(&events)) 

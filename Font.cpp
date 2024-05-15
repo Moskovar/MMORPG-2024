@@ -1,11 +1,11 @@
 #include "Font.h"
 
-Font::Font(SDL_Window* window, SDL_Renderer* renderer, string text)
+Font::Font(string text, int size, SDL_Window* window, SDL_Renderer* renderer)
 {
     this->text = text;
 
     //// Chargement de la police
-    font = TTF_OpenFont("fonts/roboto/Roboto-Regular.ttf", 24);
+    font = TTF_OpenFont("fonts/roboto/Roboto-Regular.ttf", size);
     if (font == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG] > %s", TTF_GetError());
         SDL_DestroyRenderer(renderer);
@@ -40,6 +40,8 @@ Font::Font(SDL_Window* window, SDL_Renderer* renderer, string text)
         SDL_Quit();
         exit(1);
     }
+    this->pos.w = img->w;
+    this->pos.h = img->h;
 }
 
 void Font::clear()
@@ -47,4 +49,11 @@ void Font::clear()
     TTF_CloseFont(font);
     SDL_FreeSurface(img);
     SDL_DestroyTexture(texture);
+}
+
+void Font::draw(SDL_Renderer* renderer, int x, int y)
+{
+    this->pos.x = x;
+    this->pos.y = y;
+    SDL_RenderCopy(renderer, texture, NULL, &this->pos);
 }

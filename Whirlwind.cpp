@@ -37,7 +37,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
               yChange = e.getSpeed() / 4 * uti::pixDir[e.getDir()].yRate;
         if (!cameraLock)
         {
-            e.increaseX(xChange);   //
+            e.increaseX(xChange);
             e.increaseY(yChange);
 
             e.addXOffset(-xChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
