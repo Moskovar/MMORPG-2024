@@ -45,6 +45,8 @@ class Entity : public Element
 		SDL_Rect	 getPos()         { return this->pos;												  }
 		float      	 getX()		      { return this->x;												      }
 		float      	 getY()		      { return this->y;												      }
+		short getXHitbox() { return xHitbox; }
+		short getYHitbox() { return yHitbox; }
 		float      	 getDir()		  { return this->dir;												  }
 		short      	 getCountDir()    { return this->countDir;											  }
 		float      	 getSpeed()	      { return this->speed;												  }
@@ -58,6 +60,7 @@ class Entity : public Element
 		bool		 getCancelAA()    { return cancelAA;												  }
 		SDL_Texture* getTexture()	  { return text[animationID][dir][step];							  }
 
+		void updateHitbox() { xHitbox = x + 125; yHitbox = y + 185; }
 		void setX(float x) { this->x = x; }
 		void setY(float y) { this->y = y; }
 		void increaseX() { this->x++; }
@@ -84,7 +87,7 @@ class Entity : public Element
 	protected:
 		Pseudo pseudo;
 
-		short category, step;
+		short category, step, xHitbox, yHitbox;
 		float dir, xRate, yRate, speed;
 		bool alive, moving, spellActive, aaActive, cancelAA;
 

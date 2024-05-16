@@ -1,4 +1,5 @@
 #include "Entity.h"
+#include "Building.h"
 
 const map<short, string> Entity::types = {
     {TYPE::Humanoid, "Humanoïde"},
@@ -25,6 +26,8 @@ Entity::Entity(std::string name, int category, SDL_Window* window, SDL_Renderer*
 
     this->xRate = 0;
     this->yRate = 0;
+
+    updateHitbox();
 
     string src = "";
     for (float i = 0; i < 4; i += 0.5)
@@ -95,22 +98,28 @@ void Entity::move(vector<Element*>* v_elements, bool& cameraLock)
     float xChange = speed * xRate,
           yChange = speed * yRate;
 
-    xMap += xChange;
-    yMap += yChange;
+    updateMapPos(xChange, yChange);
     
-    if (!cameraLock)
+    //if (cameraLock) for (Element* e : *v_elements) e->resetPos();
+
+    if (!dynamic_cast<Building*>((*v_elements)[0])->check_collisions(xHitbox + xChange, yHitbox + yChange))
     {
-        pos.x = x += xChange;
-        xOffset -= xChange;//-= car on veut revenir en arrière en ajoutant la valeur
-        pos.y = y += yChange;
-        yOffset -= yChange;//-= car on veut revenir en arrière en ajoutant la valeur
+        if (!cameraLock)
+        {
+            pos.x = x += xChange;
+            xOffset -= xChange;//-= car on veut revenir en arrière en ajoutant la valeur
+            pos.y = y += yChange;
+            yOffset -= yChange;//-= car on veut revenir en arrière en ajoutant la valeur
+        }
+
+        for (unsigned int i = 0; i < v_elements->size(); i++)
+        {
+            (*v_elements)[i]->addXOffset(-xChange);
+            (*v_elements)[i]->addYOffset(-yChange);
+        }
     }
 
-    for (unsigned int i = 0; i < v_elements->size(); i++)
-    {
-        (*v_elements)[i]->addXOffset(-xChange);
-        (*v_elements)[i]->addYOffset(-yChange);
-    }
+    updateHitbox();
 
     if (dir == 0)
         if (step < 9)  step++;

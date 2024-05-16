@@ -1,4 +1,5 @@
 #include "Whirlwind.h"
+#include "Building.h"
 
 Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
 {
@@ -35,20 +36,25 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
         e.setStep(i % 20);
         float xChange = e.getSpeed() / 4 * uti::pixDir[e.getDir()].xRate,
               yChange = e.getSpeed() / 4 * uti::pixDir[e.getDir()].yRate;
-        if (!cameraLock)
-        {
-            e.increaseX(xChange);
-            e.increaseY(yChange);
 
-            e.addXOffset(-xChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
-            e.addYOffset(-yChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
-        }
-
-        for (unsigned int i = 0; i < v_elements.size(); i++)
+        if (!dynamic_cast<Building*>(v_elements[0])->check_collisions(e.getXHitbox() + xChange, e.getYHitbox() + yChange))
         {
-            v_elements[i]->addXOffset(-xChange);
-            v_elements[i]->addYOffset(-yChange);
+            if (!cameraLock)
+            {
+                e.increaseX(xChange);
+                e.increaseY(yChange);
+
+                e.addXOffset(-xChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
+                e.addYOffset(-yChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
+            }
+
+            for (unsigned int i = 0; i < v_elements.size(); i++)
+            {
+                v_elements[i]->addXOffset(-xChange);
+                v_elements[i]->addYOffset(-yChange);
+            }
         }
+        e.updateHitbox();
         Sleep(5 - (SDL_GetTicks64() - prevTime));
     }
     if (e.isMoving()) e.setAnimationID(1);

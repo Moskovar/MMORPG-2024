@@ -76,8 +76,39 @@ void t_update_camera()
                 if (mouseY == 0) { for (vector<Element*>* v : v_elements) for (Element* e : *v) e->updateYOffset(posi_cameraSpeed); }
                 else if (mouseY >= 1079) { for (vector<Element*>* v : v_elements) for (Element* e : *v) e->updateYOffset(nega_cameraSpeed); }
             }
-            else for(Element* e : *(v_elements)[1]) e->resetPos();
+            else for(Element* e : *(v_elements)[1]) e->resetPos();//applique le offset aux elements du décors
         Sleep(1);
+    }
+}
+
+void draw_circle(SDL_Renderer* renderer, int center_x, int center_y, int radius) {
+    int x = radius - 1;
+    int y = 0;
+    int dx = 1;
+    int dy = 1;
+    int err = dx - (radius << 1);
+
+    while (x >= y) {
+        // Dessiner les huit octants du cercle
+        SDL_RenderDrawPoint(renderer, center_x + x, center_y + y);
+        SDL_RenderDrawPoint(renderer, center_x - x, center_y + y);
+        SDL_RenderDrawPoint(renderer, center_x + x, center_y - y);
+        SDL_RenderDrawPoint(renderer, center_x - x, center_y - y);
+        SDL_RenderDrawPoint(renderer, center_x + y, center_y + x);
+        SDL_RenderDrawPoint(renderer, center_x - y, center_y + x);
+        SDL_RenderDrawPoint(renderer, center_x + y, center_y - x);
+        SDL_RenderDrawPoint(renderer, center_x - y, center_y - x);
+
+        if (err <= 0) {
+            y++;
+            err += dy;
+            dy += 2;
+        }
+        if (err > 0) {
+            x--;
+            dx += 2;
+            err += dx - (radius << 1);
+        }
     }
 }
 
@@ -118,12 +149,14 @@ int main(int argc, char* argv[])
     SDL_Event events;
     
     Warrior w("Titus", uti::Category::PLAYER, window, renderer);
-    Building b(0, 0, 1000, 672, renderer, "tavern");
+    Building b(500, 0, 1000, 672, renderer, "tavern/tavern");
+    Building b2(0, 2000, 1000, 672, renderer, "tavern/tavern");
     QuestBook qb(850, 200, renderer);
     qb.addQuest(new Quest("First quest", "First quest in the world", 100, window, renderer));
 
     v_elements[0]->push_back(dynamic_cast<Element*>(&w));
     v_elements[1]->push_back(dynamic_cast<Element*>(&b));
+    //v_elements[1]->push_back(dynamic_cast<Element*>(&b2));
 
     // Variables pour le calcul du delta time
     thread t_player(t_move_player, &w);
@@ -151,7 +184,7 @@ int main(int argc, char* argv[])
                     if (events.key.keysym.sym == SDLK_q) { if (!w.left)  w.countDir += uti::Direction::LEFT;  w.left = true;  w.update(); }
                     if (events.key.keysym.sym == SDLK_a) { if (!w.isSpellActive()) { w.setCancelAA(true); if (!w.isSpellActive()) { if (t_spell.joinable()) t_spell.join(); t_spell = thread(t_run_spell, w.getSpell(1), &w); } } }
                     if (events.key.keysym.sym == SDLK_e) { if (!w.isSpellActive()) { if (!w.isAAActive()) { if (t_aa.joinable()) t_aa.join(); t_aa = thread(t_run_aa, dynamic_cast<AutoAttack*>(w.getSpell(0)), &w); } } }
-                    if (events.key.keysym.sym == SDLK_SPACE) { for(vector<Element*>* v : v_elements) for(Element* e : *v) e->resetPos(); cameraLock = true; } 
+                    if (events.key.keysym.sym == SDLK_SPACE) { for (vector<Element*>* v : v_elements) for (Element* e : *v) e->resetPos(); cameraLock = true; w.updateHitbox(); }
                     if (events.key.keysym.sym == SDLK_y) { cameraLock = !cameraLock; for (vector<Element*>* v : v_elements) for (Element* e : *v) e->resetPos(); }
                     break;
                 case SDL_KEYUP: // Un événement de type touche relâchée est effectué                
@@ -168,17 +201,34 @@ int main(int argc, char* argv[])
                 case SDL_MOUSEMOTION:
                     mouseX = events.motion.x;
                     mouseY = events.motion.y;
+                    //cout << mouseX << " : " << mouseY << endl;
                     break;
             }
         }
 
         SDL_RenderClear(renderer);
         
-        b.draw(renderer);
-        w.draw(renderer);
+
+        if (b.isInFront(w.getXHitbox(), w.getYHitbox()))
+        {
+            w.draw(renderer);
+            b.draw(renderer);
+        }
+        else
+        {
+            b.draw(renderer);
+            w.draw(renderer);
+        }
+
+        // Couleur du cercle (rouge)
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+
+        draw_circle(renderer, w.getXHitbox() + w.getSpeed() * w.getXRate(), w.getYHitbox() + w.getSpeed() * w.getYRate(), 10);
 
         //--- DRAW UI ---//
         if(qb.isToDraw()) qb.draw(renderer);
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         //--------------//
         SDL_RenderPresent(renderer);
         Sleep(1);
