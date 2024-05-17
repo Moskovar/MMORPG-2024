@@ -7,7 +7,7 @@ const map<short, string> Entity::types = {
     {TYPE::Drake, "Dragon"}
 };
 
-Entity::Entity(std::string name, int category, SDL_Window* window, SDL_Renderer* renderer, string imgSrc) : Element(1920 / 2 - 125, 1080 / 2 - 125, 250, 250 )
+Entity::Entity(std::string name, float x, float y, int category, SDL_Window* window, SDL_Renderer* renderer, string imgSrc) : Element(x, y, 250, 250 )
 {
     
     this->pseudo = Pseudo(window, renderer, name);
@@ -27,7 +27,9 @@ Entity::Entity(std::string name, int category, SDL_Window* window, SDL_Renderer*
     this->xRate = 0;
     this->yRate = 0;
 
-    updateHitbox();
+    imgPortrait = IMG_Load(string("img/entity/" + imgSrc + "/picture/head.png").c_str());
+    if (imgPortrait) textPortrait = SDL_CreateTextureFromSurface(renderer, imgPortrait);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> portrait.png");   exit(0); }
 
     string src = "";
     for (float i = 0; i < 4; i += 0.5)
@@ -70,6 +72,9 @@ Entity::Entity(std::string name, int category, SDL_Window* window, SDL_Renderer*
     spells[1] = new Whirlwind(renderer);
     img[Whirlwind::animationID]    = spells[1]->getImg();
     text[Whirlwind::animationID]   = spells[1]->getText();
+
+    updateHitbox();
+    updateClickBox();
 }
 
 Entity::~Entity()
@@ -89,7 +94,7 @@ Entity::~Entity()
     std::cout << "Entity: " << pseudo.getFont().getText() << " cleared !" << std::endl;
 }
 
-void Entity::move(vector<Element*>* v_elements, bool& cameraLock)
+void Entity::move(vector<Element*>& v_elements, bool& cameraLock)
 {
     Sleep(15); // /2 pour tapisser le sentiment de pause avant et après le mouvement
 
@@ -100,9 +105,9 @@ void Entity::move(vector<Element*>* v_elements, bool& cameraLock)
 
     updateMapPos(xChange, yChange);
     
-    //if (cameraLock) for (Element* e : *v_elements) e->resetPos();
-
-    if (!dynamic_cast<Building*>((*v_elements)[0])->check_collisions(xHitbox + xChange, yHitbox + yChange))
+    bool collision = false;
+    for (Element* b : v_elements) if (b->check_collisions(xHitbox + xChange, yHitbox + yChange)) { collision = true; break; }
+    if (!collision)
     {
         if (!cameraLock)
         {
@@ -111,15 +116,17 @@ void Entity::move(vector<Element*>* v_elements, bool& cameraLock)
             pos.y = y += yChange;
             yOffset -= yChange;//-= car on veut revenir en arrière en ajoutant la valeur
         }
+        else for (Element* e : v_elements) e->resetPos();//applique le offset aux elements du décors
 
-        for (unsigned int i = 0; i < v_elements->size(); i++)
+        for (unsigned int i = 0; i < v_elements.size(); i++)
         {
-            (*v_elements)[i]->addXOffset(-xChange);
-            (*v_elements)[i]->addYOffset(-yChange);
+            v_elements[i]->addXOffset(-xChange);
+            v_elements[i]->addYOffset(-yChange);
         }
     }
 
     updateHitbox();
+    updateClickBox();
 
     if (dir == 0)
         if (step < 9)  step++;
@@ -152,6 +159,11 @@ void Entity::move(vector<Element*>* v_elements, bool& cameraLock)
     Sleep(15 - (SDL_GetTicks64() - prevTime));
 }
 
+bool Entity::inClickBox(int x, int y)
+{
+    return x > clickBox.x && x < clickBox.x + clickBox.w && y > clickBox.y && y < clickBox.y + clickBox.h;
+}
+
 void Entity::update()
 {
     switch (countDir)
@@ -176,4 +188,27 @@ void Entity::update()
 
     if      (moving == false && animationID == 1) animationID = 0;
     else if (moving == true && animationID == 0)  animationID = 1;
+}
+
+void Entity::resetPos()
+{
+    x += xOffset;
+    pos.x = x;
+    y += yOffset;
+    pos.y = y; 
+    xOffset = 0;
+    yOffset = 0;
+
+    updateHitbox();
+    updateClickBox();
+}
+
+bool Entity::isInFront(int x, int y)
+{
+    return this->yHitbox > y;
+}
+
+bool Entity::check_collisions(int x, int y)
+{
+    return false;
 }

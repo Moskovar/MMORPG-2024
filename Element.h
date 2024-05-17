@@ -11,18 +11,23 @@ public:
 	Element(){}
 	Element(float x, float y, int width, int height);
 
+	virtual void draw(SDL_Renderer* renderer)   = 0;
+	virtual bool isInFront(int x, int y)        = 0;
+	virtual bool check_collisions(int x, int y) = 0;
+	virtual void resetPos() = 0;
+
+	float getY()	   { return y;		 }
 	float getXOffset() { return xOffset; }
 	float getYOffset() { return yOffset; }
-	int getXMap() { return xMap; }
-	int getYMap() { return yMap; }
+	int   getXMap()    { return xMap;    }
+	int   getYMap()    { return yMap;    }
 
 	void addXOffset(float xOffset) { this->xOffset += xOffset; }
 	void addYOffset(float yOffset) { this->yOffset += yOffset; }
 	void updateXOffset(float& cameraSpeed) { x += cameraSpeed; pos.x = x; xOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
 	void updateYOffset(float& cameraSpeed) { y += cameraSpeed; pos.y = y; yOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
 	void updateMapPos(int x, int y) { this->xMap += x;	this->yMap += y; }
-	void resetPos() { x += xOffset; pos.x = x; y += yOffset; pos.y = y; xOffset = 0; yOffset = 0; }
-	virtual void draw(SDL_Renderer* renderer) = 0;
+
 
 protected:
 	SDL_Rect pos{ 0, 0, 0, 0};

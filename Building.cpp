@@ -10,6 +10,15 @@ Building::Building(float x, float y, int width, int height, SDL_Renderer* render
 
 }
 
+Building::~Building()
+{
+        SDL_FreeSurface(img);
+        SDL_FreeSurface(imgBg);
+        SDL_DestroyTexture(text);
+
+        cout << "Building is cleared now !" << endl;
+}
+
 Uint32 get_pixel(SDL_Surface* surface, int x, int y) {
     // Obtenir le format de pixel de la surface
     SDL_PixelFormat* format = surface->format;
@@ -48,10 +57,8 @@ bool Building::isInFront(int x, int y) {
 
     //printf("Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d\n", x, y, red, green, blue, alpha);
 
-    if (red == 0 && green == 0 && blue == 255) { wasInFront = true;  return true; }
-    if (red == 255 && green == 0 && blue == 0 && wasInFront) return true;
-    //printf("Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d, wasinfront: %d\n", x, y, red, green, blue, alpha, wasInFront);
-    wasInFront = false;// A VIRER ??
+    //printf("Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d\n", x, y, red, green, blue, alpha);
+    if (red == 0 && green == 0 && blue == 255) return true;
     return false;
 }
 
@@ -65,8 +72,8 @@ bool Building::check_collisions(int x, int y)
     Uint8 red, green, blue, alpha;
     SDL_GetRGBA(pixel_color, imgBg->format, &red, &green, &blue, &alpha);
 
-    if (red == 255 && green == 0 && blue == 0) { printf("Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d, wasinfront: %d\n", x, y, red, green, blue, alpha, wasInFront);  return true; }
-    printf("COLLISIONS -> Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d, wasinfront: %d\n", x, y, red, green, blue, alpha, wasInFront);
+    if (red == 255 && green == 0 && blue == 0) { printf("Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d\n", x, y, red, green, blue, alpha);  return true; }
+    //printf("COLLISIONS -> Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d, wasinfront: %d\n", x, y, red, green, blue, alpha, wasInFront);
 
     return false;
 }
@@ -74,4 +81,14 @@ bool Building::check_collisions(int x, int y)
 void Building::draw(SDL_Renderer* renderer)
 {
     SDL_RenderCopy(renderer, text, NULL, &pos);
+}
+
+void Building::resetPos()
+{
+    x += xOffset;
+    pos.x = x;
+    y += yOffset;
+    pos.y = y;
+    xOffset = 0;
+    yOffset = 0;
 }

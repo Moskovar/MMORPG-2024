@@ -36,8 +36,10 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
         e.setStep(i % 20);
         float xChange = e.getSpeed() / 4 * uti::pixDir[e.getDir()].xRate,
               yChange = e.getSpeed() / 4 * uti::pixDir[e.getDir()].yRate;
-
-        if (!dynamic_cast<Building*>(v_elements[0])->check_collisions(e.getXHitbox() + xChange, e.getYHitbox() + yChange))
+        
+        bool collision = false;
+        for (Element* b : v_elements) if (b->check_collisions(e.getXHitbox() + xChange, e.getYHitbox() + yChange)) { collision = true; break; }
+        if (!collision)
         {
             if (!cameraLock)
             {
@@ -55,6 +57,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
             }
         }
         e.updateHitbox();
+        e.updateClickBox();
         Sleep(5 - (SDL_GetTicks64() - prevTime));
     }
     if (e.isMoving()) e.setAnimationID(1);
