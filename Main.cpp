@@ -71,10 +71,46 @@ void t_update_camera(Entity* e)
         if(flags & SDL_WINDOW_INPUT_FOCUS)
             if (!cameraLock)
             {
-                if (mouseX == 0) { for (vector<Element*> v : v_elements) for (Element* e : v) e->updateXOffset(posi_cameraSpeed); e->updateHitbox(); }//on déplace la caméra dans un sens et on enregistre l'offset dans l'autre sens pour revenir au point de départ
-                else if (mouseX >= 1919) { for (vector<Element*> v : v_elements) for (Element* e : v) e->updateXOffset(nega_cameraSpeed); e->updateHitbox(); }
-                if (mouseY == 0) { for (vector<Element*> v : v_elements) for (Element* e : v) e->updateYOffset(posi_cameraSpeed); e->updateHitbox(); }
-                else if (mouseY >= 1079) { for (vector<Element*> v : v_elements) for (Element* e : v) e->updateYOffset(nega_cameraSpeed); e->updateHitbox(); }
+                if (mouseX == 0) 
+                { 
+                    for (vector<Element*> v : v_elements) 
+                        for (Element* e : v) 
+                            e->updateXOffset(posi_cameraSpeed); 
+
+                    for (vector<Element*> v_e : v_elements) 
+                        for (Element* e : v_e) 
+                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateHitbox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                }//on déplace la caméra dans un sens et on enregistre l'offset dans l'autre sens pour revenir au point de départ
+                else if (mouseX >= 1919) 
+                { 
+                    for (vector<Element*> v : v_elements) 
+                        for (Element* e : v) 
+                            e->updateXOffset(nega_cameraSpeed); 
+
+                    for (vector<Element*> v_e : v_elements) 
+                        for (Element* e : v_e) 
+                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateHitbox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                }
+                if (mouseY == 0) 
+                { 
+                    for (vector<Element*> v : v_elements) 
+                        for (Element* e : v) 
+                            e->updateYOffset(posi_cameraSpeed); 
+
+                    for (vector<Element*> v_e : v_elements) 
+                        for (Element* e : v_e) 
+                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateHitbox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                }
+                else if (mouseY >= 1079) 
+                { 
+                    for (vector<Element*> v : v_elements) 
+                        for (Element* e : v) 
+                            e->updateYOffset(nega_cameraSpeed);
+
+                    for (vector<Element*> v_e : v_elements)
+                        for (Element* e : v_e)
+                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateHitbox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                }
             }
             //else for(Element* e : *(v_elements)[1]) e->resetPos();//applique le offset aux elements du décors
         Sleep(1);
@@ -154,7 +190,7 @@ int main(int argc, char* argv[])
     SDL_Event events;
     int posx = 1000, posy = 0;
     Warrior w("Titus", posx, posy, uti::Category::PLAYER, window, renderer);
-    NPC npc("DENT", 900, 300, uti::Category::NPC, window, renderer, "character/warrior");
+    NPC npc("DENT", 900, 300, uti::Category::NPC, window, renderer, "character/warrior", false);
 
     Building b(0, 0, 1000, 672, renderer, "tavern/tavern");
     Building b2(250, 1500, 1000, 672, renderer, "tavern/tavern");
@@ -224,9 +260,10 @@ int main(int argc, char* argv[])
                     mouseX = events.motion.x;
                     mouseY = events.motion.y;
                     
-                    //cout << mouseX << " : " << mouseY << endl;
+                    
                     break;
                 case SDL_MOUSEBUTTONDOWN:
+                    cout << mouseX << " : " << mouseY << endl;
                     bool targetFound = false;
                     if (events.button.button == SDL_BUTTON_LEFT)
                         for(vector<Element*> v_e : v_elements)

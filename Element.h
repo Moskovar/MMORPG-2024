@@ -31,6 +31,7 @@ public:
 
 protected:
 	SDL_Rect pos{ 0, 0, 0, 0};
+	bool isSolid = false;
 	int xMap = 0, yMap = 0;//position sur la map
 	float x = 0, y = 0, xOffset = 0, yOffset = 0;//position sur l'écran et offset par rapport à la caméra
 
