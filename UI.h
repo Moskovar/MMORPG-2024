@@ -18,6 +18,7 @@ class UI
 		static SDL_Texture* textQuest_available;
 
 		bool isQBVisible() { return qb->isVisible(); }
+		QuestBook* getQuestBook() { return this->qb; }
 
 		void setTargetPortrait(SDL_Texture* textTarget) { targetPortrait->setTextEntity(textTarget); }
 		void setQBVisible(bool state) { qb->setVisible(state); }

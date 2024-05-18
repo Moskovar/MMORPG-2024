@@ -8,6 +8,7 @@ class NPC : public Entity
 		NPC() {}
 		NPC(std::string name, float x, float y, int category, SDL_Window* window, SDL_Renderer* renderer, string className, bool isSolid);
 
+		Quest* getPQuest() { return &this->quest; }
 
 		void resetPos() override;
 		void draw(SDL_Renderer* renderer);

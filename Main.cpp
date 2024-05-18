@@ -276,7 +276,9 @@ int main(int argc, char* argv[])
                         for (Element* e : v_e) 
                             if (dynamic_cast<Entity*>(e) && dynamic_cast<Entity*>(e)->inClickBox(events.button.x, events.button.y))
                             {
-                                ui.setTargetPortrait(dynamic_cast<Entity*>(e)->getPortraitTexture()); targetFound = true;  break;
+                                ui.setTargetPortrait(dynamic_cast<Entity*>(e)->getPortraitTexture()); targetFound = true;  
+                                if (dynamic_cast<NPC*>(e)) ui.getQuestBook()->addQuest(dynamic_cast<NPC*>(e)->getPQuest());
+                                break;
                             }
                         if (!targetFound) ui.setTargetPortrait(nullptr);
                     break;
