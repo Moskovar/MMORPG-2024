@@ -8,6 +8,19 @@ Character::Character(std::string name, float x, float y, int category, SDL_Windo
 	clickBox.h = 125;
 };
 
+void Character::resetPos()
+{
+    x += xOffset;
+    pos.x = x;
+    y += yOffset;
+    pos.y = y;
+    xOffset = 0;
+    yOffset = 0;
+
+    updateMovebox();
+    updateClickBox();
+}
+
 void Character::draw(SDL_Renderer* renderer)
 {
 	//pseudo.draw(renderer, getPseudoX(), getPseudoY());

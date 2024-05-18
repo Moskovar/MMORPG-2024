@@ -38,7 +38,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
               yChange = e.getSpeed() / 4 * uti::pixDir[e.getDir()].yRate;
         
         bool collision = false;
-        for (Element* b : v_elements) if (b->check_collisions(e.getXHitbox() + xChange, e.getYHitbox() + yChange)) { collision = true; break; }
+        for (Element* b : v_elements) if (b->check_collisions(e.getXMovebox() + xChange, e.getYMovebox() + yChange)) { collision = true; break; }
         if (!collision)
         {
             if (!cameraLock)
@@ -49,6 +49,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
                 e.addXOffset(-xChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
                 e.addYOffset(-yChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
             }
+            else for (Element* e : v_elements) e->resetPos();//applique le offset aux elements du décors
 
             for (unsigned int i = 0; i < v_elements.size(); i++)
             {
@@ -56,7 +57,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
                 v_elements[i]->addYOffset(-yChange);
             }
         }
-        e.updateHitbox();
+        e.updateMovebox();
         e.updateClickBox();
         Sleep(5 - (SDL_GetTicks64() - prevTime));
     }

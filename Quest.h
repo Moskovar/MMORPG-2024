@@ -10,6 +10,9 @@ class Quest
 		Quest() {}
 		Quest(string name, string desc, int exp, SDL_Window* window, SDL_Renderer* renderer);
 
+		SDL_Rect iconPos;
+
+		short getState() { return state; }
 		string getName() { return this->name.getText(); }
 		string getDesc() { return this->desc.getText(); }
 		int    getExp()  { return this->exp;            }
@@ -18,6 +21,7 @@ class Quest
 		void drawDesc(SDL_Renderer* renderer, int x, int y);
 
 	private:
+		short state = 1;//0 pas dispo, 1 dispo, 2 attente d'être retournée
 		Font name, desc;
 		int exp = 0;
 		//Item items[5];

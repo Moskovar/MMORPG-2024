@@ -45,7 +45,7 @@ Uint32 get_pixel(SDL_Surface* surface, int x, int y) {
         return 0; // Format non supporté
     }
 }
-#include <Windows.h>
+
 bool Building::isInFront(int x, int y) {
 
     if (x < this->pos.x || x > this->pos.x + imgBg->w - 1 || y < this->pos.y || y > this->pos.y + imgBg->h - 1) return false;// check table de vérité ?
@@ -71,9 +71,7 @@ bool Building::isInFront(int x, int y) {
     SDL_GetRGBA(pixel_color, imgBg->format, &red, &green, &blue, &alpha);
     if (red == 0 && green == 0 && blue == 255) return true;
 
-
     //printf("Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d\n", x, y, red, green, blue, alpha);
-    return false;
 
     return false;
 }
@@ -91,7 +89,6 @@ bool Building::check_collisions(int x, int y)
 
     //printf("Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d\n", x, y, red, green, blue, alpha);
 
-    //printf("Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d\n", x, y, red, green, blue, alpha);
     return false;
 }
 

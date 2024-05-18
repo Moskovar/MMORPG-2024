@@ -13,9 +13,7 @@
 #include "Warrior.h"
 #include "NPC.h"
 #include "Building.h"
-#include "QuestBook.h"
-#include "Portrait.h"
-#include "Quest.h"
+#include "UI.h"
 #include "Font.h"
 
 using namespace std;
@@ -26,6 +24,8 @@ SDL_Renderer* renderer{ nullptr };
 SDL_bool run = SDL_TRUE;
 Uint32 flags;
 float deltaTime = 0;
+
+int width = 1920, height = 1080;
 
 vector<vector<Element*>> v_elements = { {}, {} };
 
@@ -79,7 +79,7 @@ void t_update_camera(Entity* e)
 
                     for (vector<Element*> v_e : v_elements) 
                         for (Element* e : v_e) 
-                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateHitbox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
                 }//on déplace la caméra dans un sens et on enregistre l'offset dans l'autre sens pour revenir au point de départ
                 else if (mouseX >= 1919) 
                 { 
@@ -89,7 +89,7 @@ void t_update_camera(Entity* e)
 
                     for (vector<Element*> v_e : v_elements) 
                         for (Element* e : v_e) 
-                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateHitbox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
                 }
                 if (mouseY == 0) 
                 { 
@@ -99,7 +99,7 @@ void t_update_camera(Entity* e)
 
                     for (vector<Element*> v_e : v_elements) 
                         for (Element* e : v_e) 
-                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateHitbox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
                 }
                 else if (mouseY >= 1079) 
                 { 
@@ -109,7 +109,7 @@ void t_update_camera(Entity* e)
 
                     for (vector<Element*> v_e : v_elements)
                         for (Element* e : v_e)
-                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateHitbox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                            if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
                 }
             }
             //else for(Element* e : *(v_elements)[1]) e->resetPos();//applique le offset aux elements du décors
@@ -188,18 +188,17 @@ int main(int argc, char* argv[])
     SDL_RenderPresent(renderer);
     
     SDL_Event events;
-    int posx = 1000, posy = 0;
+    int posx = 850, posy = 600;
     Warrior w("Titus", posx, posy, uti::Category::PLAYER, window, renderer);
     NPC npc("DENT", 900, 300, uti::Category::NPC, window, renderer, "character/warrior", false);
+    UI ui(renderer, &w);
 
     Building b(0, 0, 1000, 672, renderer, "tavern/tavern");
     Building b2(250, 1500, 1000, 672, renderer, "tavern/tavern");
     Building b3(1000, 500, 1000, 672, renderer, "tavern/tavern");
     Building b4(1500, 800, 1000, 672, renderer, "tavern/tavern");
-    Portrait p(0, 0, renderer, w.getPortraitTexture());
-    Portrait pt(350, 0, renderer, nullptr);
-    QuestBook qb(850, 200, renderer);
-    qb.addQuest(new Quest("First quest", "First quest in the world", 100, window, renderer));
+    
+    //qb.addQuest(new Quest("First quest", "First quest in the world", 100, window, renderer));
     v_elements[0].push_back(dynamic_cast<Element*>(&w));
     v_elements[1].push_back(dynamic_cast<Element*>(&b2));
     v_elements[1].push_back(dynamic_cast<Element*>(&b));
@@ -207,9 +206,16 @@ int main(int argc, char* argv[])
     v_elements[1].push_back(dynamic_cast<Element*>(&b4));
     v_elements[1].push_back(dynamic_cast<Element*>(&npc));
 
+    for (Element* e : v_elements[1])
+    {
+        e->addXOffset(width / 2 - posx);
+        e->addYOffset(height / 2 - posy);
+        e->resetPos();
+    }
+
     //--- Personnage au milieu de l'écran ---//
-    w.addXOffset(1920 / 2 - 125 - posx);
-    w.addYOffset(1080 / 2 - 125 - posy);
+    w.addXOffset(width / 2 - 125 - posx);
+    w.addYOffset(height / 2 - 125 - posy);
     w.resetPos();
 
     sort(v_elements[1].begin(), v_elements[1].end(), compareZ);
@@ -221,7 +227,7 @@ int main(int argc, char* argv[])
     thread t_camera(t_update_camera, &w);
     bool playerDrawn = false;
     SDL_RenderClear(renderer);
-    SDL_SetWindowSize(window, 1920, 1080);
+    SDL_SetWindowSize(window, width, height);
     SDL_SetWindowPosition(window, 0, 0);
 
     // Activer la capture de la souris dans la fenêtre
@@ -242,8 +248,8 @@ int main(int argc, char* argv[])
                     if (events.key.keysym.sym == SDLK_q) { if (!w.left)  w.countDir += uti::Direction::LEFT;  w.left = true;  w.update(); }
                     if (events.key.keysym.sym == SDLK_a) { if (!w.isSpellActive()) { w.setCancelAA(true); if (!w.isSpellActive()) { if (t_spell.joinable()) t_spell.join(); t_spell = thread(t_run_spell, w.getSpell(1), &w); } } }
                     if (events.key.keysym.sym == SDLK_e) { if (!w.isSpellActive()) { if (!w.isAAActive()) { if (t_aa.joinable()) t_aa.join(); t_aa = thread(t_run_aa, dynamic_cast<AutoAttack*>(w.getSpell(0)), &w); } } }
-                    if (events.key.keysym.sym == SDLK_SPACE) { for (vector<Element*> v : v_elements) for (Element* e : v) e->resetPos(); cameraLock = true; w.updateHitbox(); }
-                    if (events.key.keysym.sym == SDLK_y) { cameraLock = !cameraLock; for (vector<Element*> v : v_elements) for (Element* e : v) e->resetPos(); w.updateHitbox(); }
+                    if (events.key.keysym.sym == SDLK_SPACE) { for (vector<Element*> v : v_elements) for (Element* e : v) e->resetPos(); cameraLock = true; w.updateMovebox(); }
+                    if (events.key.keysym.sym == SDLK_y) { cameraLock = !cameraLock; for (vector<Element*> v : v_elements) for (Element* e : v) e->resetPos(); w.updateMovebox(); }
                     break;
                 case SDL_KEYUP: // Un événement de type touche relâchée est effectué                
                     if (events.key.keysym.sym == SDLK_ESCAPE) { run = SDL_FALSE; w.setAlive(false); w.setCancelAA(true); }
@@ -254,7 +260,7 @@ int main(int argc, char* argv[])
                     if (events.key.keysym.sym == SDLK_SPACE) cameraLock = false;
 
                     //--- UI SHORTCUTS ---//
-                    if (events.key.keysym.sym == SDLK_l) qb.setToDraw(!qb.isToDraw());
+                    if (events.key.keysym.sym == SDLK_l) ui.setQBVisible(!ui.isQBVisible());
                     break;
                 case SDL_MOUSEMOTION:
                     mouseX = events.motion.x;
@@ -270,9 +276,9 @@ int main(int argc, char* argv[])
                         for (Element* e : v_e) 
                             if (dynamic_cast<Entity*>(e) && dynamic_cast<Entity*>(e)->inClickBox(events.button.x, events.button.y))
                             {
-                                pt.setTextEntity(dynamic_cast<Entity*>(e)->getPortraitTexture()); targetFound = true;  break;
+                                ui.setTargetPortrait(dynamic_cast<Entity*>(e)->getPortraitTexture()); targetFound = true;  break;
                             }
-                        if (!targetFound) pt.setTextEntity(nullptr);
+                        if (!targetFound) ui.setTargetPortrait(nullptr);
                     break;
             }
         }
@@ -282,7 +288,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < v_elements[1].size(); i++)
         {
             if(!playerDrawn)
-                if (!(v_elements[1])[i]->isInFront(w.getXHitbox(), w.getYHitbox()))
+                if (!(v_elements[1])[i]->isInFront(w.getXMovebox(), w.getYMovebox()))
                     (v_elements[1])[i]->draw(renderer);
                 else
                 {
@@ -298,18 +304,15 @@ int main(int argc, char* argv[])
 
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
 
-        draw_circle(renderer, w.getXHitbox() + w.getSpeed() * w.getXRate(), w.getYHitbox() + w.getSpeed() * w.getYRate(), 10);
-
-        //--- DRAW UI ---//
-        p.draw(renderer);
-        pt.draw(renderer);
-        if(qb.isToDraw()) qb.draw(renderer);
-
-        //--------------//
+        draw_circle(renderer, w.getXMovebox() + w.getSpeed() * w.getXRate(), w.getYMovebox() + w.getSpeed() * w.getYRate(), 10);
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderDrawRect(renderer, npc.getPClickBox());
         SDL_RenderDrawRect(renderer, w.getPClickBox());
+
+        //--- DRAW UI ---//
+        ui.draw(renderer);
+        //--------------//
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderPresent(renderer);
         Sleep(1);

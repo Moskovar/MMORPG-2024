@@ -21,6 +21,9 @@ bool QuestBook::addQuest(Quest* q)
 
 void QuestBook::draw(SDL_Renderer* renderer)
 {
-	SDL_RenderCopy(renderer, text, NULL, &pos);
-	for (Quest* q : quest) if (q != nullptr) { q->drawName(renderer, this->pos.x + this->pos.w / 2 + 50, this->pos.y + 100); q->drawDesc(renderer, this->pos.x + this->pos.w / 2 + 150, this->pos.y + 100); }
+	if (visible)
+	{
+		SDL_RenderCopy(renderer, text, NULL, &pos);
+		for (Quest* q : quest) if (q != nullptr) { q->drawName(renderer, this->pos.x + this->pos.w / 2 + 50, this->pos.y + 100); q->drawDesc(renderer, this->pos.x + this->pos.w / 2 + 150, this->pos.y + 100); }
+	}
 }

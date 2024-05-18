@@ -9,7 +9,6 @@ const map<short, string> Entity::types = {
 
 Entity::Entity(std::string name, float x, float y, int category, SDL_Window* window, SDL_Renderer* renderer, string imgSrc) : Element(x, y, 250, 250 )
 {
-    
     this->pseudo = Pseudo(window, renderer, name);
 
     this->category = category;
@@ -73,7 +72,7 @@ Entity::Entity(std::string name, float x, float y, int category, SDL_Window* win
     img[Whirlwind::animationID]    = spells[1]->getImg();
     text[Whirlwind::animationID]   = spells[1]->getText();
 
-    updateHitbox();
+    updateMovebox();
     updateClickBox();
 }
 
@@ -106,7 +105,7 @@ void Entity::move(vector<Element*>& v_elements, bool& cameraLock)
     updateMapPos(xChange, yChange);
     
     bool collision = false;
-    for (Element* b : v_elements) if (b->check_collisions(xHitbox + xChange, yHitbox + yChange)) { collision = true; break; }
+    for (Element* b : v_elements) if (b->check_collisions(xMovebox + xChange, yMovebox + yChange)) { collision = true; break; }
     if (!collision)
     {
         if (!cameraLock)
@@ -125,7 +124,7 @@ void Entity::move(vector<Element*>& v_elements, bool& cameraLock)
         }
     }
 
-    updateHitbox();
+    updateMovebox();
     updateClickBox();
 
     if (dir == 0)
@@ -190,22 +189,9 @@ void Entity::update()
     else if (moving == true && animationID == 0)  animationID = 1;
 }
 
-void Entity::resetPos()
-{
-    x += xOffset;
-    pos.x = x;
-    y += yOffset;
-    pos.y = y; 
-    xOffset = 0;
-    yOffset = 0;
-
-    updateHitbox();
-    updateClickBox();
-}
-
 bool Entity::isInFront(int x, int y)
 {
-    return this->yHitbox > y;
+    return this->yMovebox > y;
 }
 
 bool Entity::check_collisions(int x, int y)
