@@ -96,13 +96,3 @@ void Building::draw(SDL_Renderer* renderer)
 {
     SDL_RenderCopy(renderer, text, NULL, &pos);
 }
-
-void Building::resetPos()
-{
-    x += xOffset;
-    pos.x = x;
-    y += yOffset;
-    pos.y = y;
-    xOffset = 0;
-    yOffset = 0;
-}

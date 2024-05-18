@@ -10,7 +10,7 @@ class Whirlwind : public Spell
 {
 public:
 	Whirlwind(SDL_Renderer* renderer);
-	void run(vector<Element*>& v_element, Entity& e, bool& camereLock) override;
+	void run(vector<Element*>& v_element, Entity& e, vector<MapFragment*>& v_mapFragments, bool& camereLock) override;
 
 	static const short animationID = 4;
 

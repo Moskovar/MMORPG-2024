@@ -11,7 +11,7 @@ public:
 	bool check_collisions(int x, int y) override;
 
 	virtual void draw(SDL_Renderer* renderer);
-	void resetPos() override;
+	//void resetPos() override;
 private:
 	SDL_Surface* img   = nullptr;
 	SDL_Surface* imgBg = nullptr;

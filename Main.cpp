@@ -10,6 +10,7 @@
 #include <vector>
 #include <algorithm>
 
+#include "MapFragment.h"
 #include "Warrior.h"
 #include "NPC.h"
 #include "Building.h"
@@ -27,6 +28,7 @@ float deltaTime = 0;
 
 int width = 1920, height = 1080;
 
+vector<MapFragment*> v_mapFragments;
 vector<vector<Element*>> v_elements = { {}, {} };
 
 float posi_cameraSpeed = 5, nega_cameraSpeed = -posi_cameraSpeed;
@@ -77,9 +79,11 @@ int main(int argc, char* argv[])
     SDL_RenderCopy(renderer, loading_screen_texture, NULL, &loading_screen_pos);
     SDL_RenderPresent(renderer);
     
-    SDL_Event events;
+    MapFragment mf("grass", renderer);
+    v_mapFragments.push_back(&mf);
     int posx = 850, posy = 600;
     Warrior w("Titus", posx, posy, uti::Category::PLAYER, renderer);
+    w.setXYMap(posx, posy);
     NPC npc("DENT", 900, 300, uti::Category::NPC, "character/warrior", false, renderer);
     UI ui(window, renderer, &w);
 
@@ -124,9 +128,11 @@ int main(int argc, char* argv[])
 
     // Activer la capture de la souris dans la fenêtre
     SDL_SetWindowGrab(window, SDL_TRUE);
-    //SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);    
+    //SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+    SDL_Event events;
     while (run) 
     {
+        //cout << w.getXMap() << " : " << w.getYMap() << endl;
         sort(v_elements[1].begin(), v_elements[1].end(), compareZ);
         while (SDL_PollEvent(&events)) 
         {
@@ -170,6 +176,8 @@ int main(int argc, char* argv[])
         }
 
         SDL_RenderClear(renderer);
+
+        for (MapFragment* mf : v_mapFragments) mf->draw(renderer);
         
         for (int i = 0; i < v_elements[1].size(); i++)
         {
@@ -223,14 +231,14 @@ void t_move_player(Entity* e)
 {
     while (e->isAlive())
     {
-        if (e->isMoving() && !e->isSpellActive()) e->move(v_elements[1], cameraLock);
+        if (e->isMoving() && !e->isSpellActive()) e->move(v_elements[1], v_mapFragments,cameraLock);
         Sleep(1);
     }
 }
 
 void t_run_spell(Spell* spell, Entity* e)
 {
-    spell->run(v_elements[1], *e, cameraLock);
+    spell->run(v_elements[1], *e, v_mapFragments, cameraLock);
     if (e->getCountDir() == 0) e->setMoving(false);
 }
 
@@ -238,7 +246,7 @@ void t_run_aa(AutoAttack* spell, Entity* e)
 {
     while (!e->getCancelAA())
     {
-        spell->run(v_elements[1], *e, cameraLock);
+        spell->run(v_elements[1], *e, v_mapFragments, cameraLock);
         if (e->getCountDir() == 0) e->setMoving(false);
         for (int p = 0; p < 1000; p++)
         {
@@ -267,41 +275,50 @@ void t_update_camera(Entity* e)
                 {
                     for (vector<Element*> v : v_elements)
                         for (Element* e : v)
+                        {
                             e->updateXOffset(posi_cameraSpeed);
-
-                    for (vector<Element*> v_e : v_elements)
-                        for (Element* e : v_e)
                             if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                        }
+
+                    for(MapFragment* mf : v_mapFragments) mf->updateXOffset(posi_cameraSpeed);                            
                 }//on déplace la caméra dans un sens et on enregistre l'offset dans l'autre sens pour revenir au point de départ
                 else if (mouseX >= 1919)
                 {
                     for (vector<Element*> v : v_elements)
                         for (Element* e : v)
+                        {
                             e->updateXOffset(nega_cameraSpeed);
-
-                    for (vector<Element*> v_e : v_elements)
-                        for (Element* e : v_e)
                             if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                        }
+
+                    for (MapFragment* mf : v_mapFragments) mf->updateXOffset(nega_cameraSpeed);                            
                 }
                 if (mouseY == 0)
                 {
+                    //--- Mise à jour des éléments ---//
                     for (vector<Element*> v : v_elements)
                         for (Element* e : v)
+                        {
                             e->updateYOffset(posi_cameraSpeed);
-
-                    for (vector<Element*> v_e : v_elements)
-                        for (Element* e : v_e)
                             if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                        }
+
+                    //--- Mise à jour de la position des fragments de map ---//
+                    for (MapFragment* mf : v_mapFragments) mf->updateYOffset(posi_cameraSpeed);
+
+                            
                 }
                 else if (mouseY >= 1079)
                 {
+                    //--- Mise à jour des éléments ---//
                     for (vector<Element*> v : v_elements)
                         for (Element* e : v)
+                        {
                             e->updateYOffset(nega_cameraSpeed);
-
-                    for (vector<Element*> v_e : v_elements)
-                        for (Element* e : v_e)
                             if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                        }
+                    //--- Mise à jour de la position des fragments de map ---//
+                    for (MapFragment* mf : v_mapFragments) mf->updateYOffset(nega_cameraSpeed);
                 }
             }
         //else for(Element* e : *(v_elements)[1]) e->resetPos();//applique le offset aux elements du décors

@@ -25,7 +25,7 @@ AutoAttack::AutoAttack(SDL_Renderer* renderer) : Spell("Auto attack")
     }
 }
 
-void AutoAttack::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
+void AutoAttack::run(vector<Element*>& v_elements, Entity& e, vector<MapFragment*>& v_mapFragments, bool& cameraLock)
 {
     cout << e.getPos().x << endl;
     e.setAnimationID(this->animationID);

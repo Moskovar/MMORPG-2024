@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "uti.h"
-#include "Element.h"
+#include "MapFragment.h"
 #include "Pseudo.h"
 #include "Whirlwind.h"
 #include "AutoAttack.h"
@@ -34,7 +34,7 @@ class Entity : public Element
 
 		virtual void draw(SDL_Renderer* renderer) = 0;
 
-		void move(vector<Element*>& v_elements, bool& cameraLock);
+		void move(vector<Element*>& v_elements, vector<MapFragment*>& v_mapFragments, bool& cameraLock);
 
 		Spell* getSpell(int i)			  { return spells[i];												  }
 		Pseudo		 getPseudo()          { return this->pseudo;											  }

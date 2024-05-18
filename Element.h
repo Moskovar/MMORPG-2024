@@ -15,15 +15,19 @@ public:
 	virtual void draw(SDL_Renderer* renderer)   = 0;
 	virtual bool isInFront(int x, int y)        = 0;
 	virtual bool check_collisions(int x, int y) = 0;
-	virtual void resetPos() = 0;
+	virtual void resetPos();
 
+	SDL_Rect getPos()  { return pos;	 }
+	float getX()	   { return x;		 }
 	float getY()	   { return y;		 }
 	float getXOffset() { return xOffset; }
 	float getYOffset() { return yOffset; }
 	int   getXMap()    { return xMap;    }
 	int   getYMap()    { return yMap;    }
 
-
+	void setXYMap(int x, int y) { this->xMap = x;	this->yMap = y; }
+	void addXMap(int x) { xMap += x; }
+	void addYMap(int y) { yMap += y; }
 	void addXOffset(float xOffset) { this->xOffset += xOffset; }
 	void addYOffset(float yOffset) { this->yOffset += yOffset; }
 	virtual void updateXOffset(float& cameraSpeed) { x += cameraSpeed; pos.x = x; xOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite

@@ -10,6 +10,7 @@
 #include "uti.h"
 
 #include "Element.h"
+#include "MapFragment.h"
 
 class Entity;
 
@@ -21,7 +22,7 @@ class Spell
 	public:
 		//Spell() {};
 		Spell(string name);
-		virtual void run(vector<Element*>& v_elements, Entity& e, bool& cameraLock) = 0;
+		virtual void run(vector<Element*>& v_elements, Entity& e, vector<MapFragment*>& v_mapFragments, bool& cameraLock) = 0;
 
 		map<float, SDL_Surface*[30]>& getImg()  { return img;  }
 		map<float, SDL_Texture*[30]>& getText() { return text; }

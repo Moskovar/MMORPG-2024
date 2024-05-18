@@ -23,7 +23,7 @@ Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
     }
 }
 
-void Whirlwind::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
+void Whirlwind::run(vector<Element*>& v_elements, Entity& e, vector<MapFragment*>& v_mapFragments, bool& cameraLock)
 {
     Uint32 prevTime;
     e.setSpellActive(true);
@@ -41,6 +41,18 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
         for (Element* b : v_elements) if (b->check_collisions(e.getXMovebox() + xChange, e.getYMovebox() + yChange)) { collision = true; break; }
         if (!collision)
         {
+            for (unsigned int i = 0; i < v_elements.size(); i++)
+            {
+                v_elements[i]->addXOffset(-xChange);
+                v_elements[i]->addYOffset(-yChange);
+            }
+
+            for (MapFragment* mf : v_mapFragments)
+            {
+                mf->addXOffset(-xChange);
+                mf->addYOffset(-yChange);
+            }
+
             if (!cameraLock)
             {
                 e.increaseX(xChange);
@@ -49,13 +61,14 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, bool& cameraLock)
                 e.addXOffset(-xChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
                 e.addYOffset(-yChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
             }
-            else for (Element* e : v_elements) e->resetPos();//applique le offset aux elements du décors
-
-            for (unsigned int i = 0; i < v_elements.size(); i++)
+            else
             {
-                v_elements[i]->addXOffset(-xChange);
-                v_elements[i]->addYOffset(-yChange);
+                for (Element* e : v_elements) e->resetPos();//applique le offset aux elements du décors
+                for (MapFragment* mf : v_mapFragments) { mf->resetPos(); }
             }
+
+            e.addXMap(xChange);
+            e.addYMap(yChange);
         }
         e.updateMovebox();
         e.updateClickBox();

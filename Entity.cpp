@@ -93,7 +93,7 @@ Entity::~Entity()
     std::cout << "Entity: " << pseudo.getFont().getText() << " cleared !" << std::endl;
 }
 
-void Entity::move(vector<Element*>& v_elements, bool& cameraLock)
+void Entity::move(vector<Element*>& v_elements, vector<MapFragment*>& v_mapFragments, bool& cameraLock)
 {
     Sleep(15); // /2 pour tapisser le sentiment de pause avant et après le mouvement
 
@@ -108,6 +108,18 @@ void Entity::move(vector<Element*>& v_elements, bool& cameraLock)
     for (Element* b : v_elements) if (b->check_collisions(xMovebox + xChange, yMovebox + yChange)) { collision = true; break; }
     if (!collision)
     {
+        for (unsigned int i = 0; i < v_elements.size(); i++)
+        {
+            v_elements[i]->addXOffset(-xChange);
+            v_elements[i]->addYOffset(-yChange);
+        }
+
+        for (MapFragment* mf : v_mapFragments)
+        {
+            mf->addXOffset(-xChange);
+            mf->addYOffset(-yChange);
+        }
+
         if (!cameraLock)
         {
             pos.x = x += xChange;
@@ -115,12 +127,10 @@ void Entity::move(vector<Element*>& v_elements, bool& cameraLock)
             pos.y = y += yChange;
             yOffset -= yChange;//-= car on veut revenir en arrière en ajoutant la valeur
         }
-        else for (Element* e : v_elements) e->resetPos();//applique le offset aux elements du décors
-
-        for (unsigned int i = 0; i < v_elements.size(); i++)
+        else
         {
-            v_elements[i]->addXOffset(-xChange);
-            v_elements[i]->addYOffset(-yChange);
+            for (Element* e : v_elements) e->resetPos();//applique le offset aux elements du décors
+            for (MapFragment* mf : v_mapFragments) { mf->resetPos(); }
         }
     }
 
