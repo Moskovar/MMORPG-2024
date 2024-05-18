@@ -21,7 +21,7 @@ class Entity : public Element
 {
 	public:
 		Entity() {}
-		Entity(std::string name, float x, float y, int category, SDL_Window* window, SDL_Renderer* renderer, string src);
+		Entity(std::string name, float x, float y, int category, string src, SDL_Renderer* renderer);
 		~Entity();
 
 		static enum TYPE {
@@ -53,7 +53,7 @@ class Entity : public Element
 		float      	 getSpeed()	          { return this->speed;												  }
 		float      	 getXRate()           { return this->xRate;												  }
 		float      	 getYRate()           { return this->yRate;												  }
-		bool		 inClickBox(int x, int y);    
+		bool		 inClickBox(int x, int y);
 		short      	 getAnimationID()     { return this->animationID;										  }
 		bool  	     isAlive()		      { return this->alive;											      }
 		bool      	 isMoving()		      { return this->moving;											  }
@@ -89,6 +89,8 @@ class Entity : public Element
 		short countDir;
 		bool up = false, right = false, down = false, left = false;
 
+
+		bool isInClickRange(int x, int y) { return (abs(this->xMovebox - x) + abs(this->yMovebox - y)) < 75; }
 		bool isInFront(int x, int y) override;
 		bool check_collisions(int x, int y) override;
 

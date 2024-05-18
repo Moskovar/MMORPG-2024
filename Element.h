@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <iostream>
+#include <cstdlib>
 
 using namespace std;
 
@@ -22,10 +23,11 @@ public:
 	int   getXMap()    { return xMap;    }
 	int   getYMap()    { return yMap;    }
 
+
 	void addXOffset(float xOffset) { this->xOffset += xOffset; }
 	void addYOffset(float yOffset) { this->yOffset += yOffset; }
-	void updateXOffset(float& cameraSpeed) { x += cameraSpeed; pos.x = x; xOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
-	void updateYOffset(float& cameraSpeed) { y += cameraSpeed; pos.y = y; yOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
+	virtual void updateXOffset(float& cameraSpeed) { x += cameraSpeed; pos.x = x; xOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
+	virtual void updateYOffset(float& cameraSpeed) { y += cameraSpeed; pos.y = y; yOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
 	void updateMapPos(int x, int y) { this->xMap += x;	this->yMap += y; }
 
 

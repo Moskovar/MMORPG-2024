@@ -9,7 +9,7 @@ class Pseudo
 {
 	public:
 		Pseudo(){}
-		Pseudo(SDL_Window* window, SDL_Renderer* renderer, string name);
+		Pseudo(string name, SDL_Renderer* renderer);
 
 		void clear();
 

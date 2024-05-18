@@ -8,7 +8,7 @@ class Quest
 {
 	public:
 		Quest() {}
-		Quest(string name, string desc, int exp, SDL_Window* window, SDL_Renderer* renderer);
+		Quest(string name, string desc, int exp, SDL_Renderer* renderer);
 
 		SDL_Rect iconPos;
 
@@ -17,6 +17,7 @@ class Quest
 		string getDesc() { return this->desc.getText(); }
 		int    getExp()  { return this->exp;            }
 
+		void setState(short state) { this->state = state; }
 		void drawName(SDL_Renderer* renderer, int x, int y);
 		void drawDesc(SDL_Renderer* renderer, int x, int y);
 

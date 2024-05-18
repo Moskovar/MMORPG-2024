@@ -1,9 +1,9 @@
 #include "Pseudo.h"
 #include <iostream>
 
-Pseudo::Pseudo(SDL_Window* window, SDL_Renderer* renderer, string name)
+Pseudo::Pseudo(string name, SDL_Renderer* renderer)
 {
-	text = Font(name, 18, window, renderer);
+	text = Font(name, 18, 255, 255, 255, 255, renderer);
 	pos = { 0, 0, text.getWidth(), text.getHeight()};
 
 	SDL_QueryTexture(text.getTexture(), NULL, NULL, &pos.x, &pos.y); // Taille du texte

@@ -7,9 +7,9 @@ const map<short, string> Entity::types = {
     {TYPE::Drake, "Dragon"}
 };
 
-Entity::Entity(std::string name, float x, float y, int category, SDL_Window* window, SDL_Renderer* renderer, string imgSrc) : Element(x, y, 250, 250 )
+Entity::Entity(std::string name, float x, float y, int category, string imgSrc, SDL_Renderer* renderer) : Element(x, y, 250, 250 )
 {
-    this->pseudo = Pseudo(window, renderer, name);
+    this->pseudo = Pseudo(name, renderer);
 
     this->category = category;
     this->step     = 0;

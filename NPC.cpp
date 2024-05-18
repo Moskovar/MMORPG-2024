@@ -1,14 +1,14 @@
 #include "NPC.h"
 #include "UI.h"
 
-NPC::NPC(std::string name, float x, float y, int category, SDL_Window* window, SDL_Renderer* renderer, string className, bool isSolid) : Entity(name, x, y, category, window, renderer, className)
+NPC::NPC(std::string name, float x, float y, int category, string className, bool isSolid, SDL_Renderer* renderer) : Entity(name, x, y, category, className, renderer)
 {
 	clickBox.x = x + 90;
 	clickBox.y = y + 65;
 	clickBox.w = 75;
 	clickBox.h = 125;
 
-	quest = Quest("First quest", "First quest in the world", 100, window, renderer);
+	quest = Quest("First quest", "First quest in the world", 100, renderer);
 	quest.iconPos.x = this->x + 125 - 17 / 2;
 	quest.iconPos.y = this->y - 25;
 }

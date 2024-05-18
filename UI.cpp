@@ -3,7 +3,7 @@
 SDL_Surface* UI::imgQuest_available = nullptr;
 SDL_Texture* UI::textQuest_available = nullptr;
 
-UI::UI(SDL_Renderer* renderer, Entity* e)
+UI::UI(SDL_Window* window, SDL_Renderer* renderer, Entity* e)
 {
 	imgQuest_available = IMG_Load("img/ui/quest/quest_icon_available.png");
 	if (imgQuest_available) textQuest_available = SDL_CreateTextureFromSurface(renderer, imgQuest_available);
@@ -11,9 +11,13 @@ UI::UI(SDL_Renderer* renderer, Entity* e)
 
 	qb = new QuestBook(850, 200, renderer);
 	targetPortrait = new Portrait(350, 0, renderer, nullptr);
-	v_UIElements.push_back(new Portrait(0   , 0  , renderer, e->getPortraitTexture()));
+	screenMsg = new ScreenMsg("C'est trop loin", 24, renderer);
+	screenMsg->updatePos();
+
+	v_UIElements.push_back(new Portrait(0, 0, renderer, e->getPortraitTexture()));
 	v_UIElements.push_back(targetPortrait);
 	v_UIElements.push_back(qb);
+	v_UIElements.push_back(screenMsg);
 }
 
 UI::~UI()
@@ -26,7 +30,7 @@ UI::~UI()
 		delete e;
 		e = nullptr;
 	}
-		printf("UI cleared !\n");
+	printf("UI cleared !\n");
 }
 
 void UI::draw(SDL_Renderer* renderer)
