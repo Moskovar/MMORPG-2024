@@ -23,7 +23,7 @@ Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
     }
 }
 
-void Whirlwind::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& cameraLock)
+void Whirlwind::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& cameraLock, mutex* mtx)
 {
     Uint32 lastTime = SDL_GetTicks64();
     Uint32 currentTime;
@@ -37,6 +37,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& camer
         currentTime = SDL_GetTicks();
         deltaTime = (currentTime - lastTime) / 1000.0f; // Convert to seconds
         lastTime = currentTime;
+        mtx->lock();
         e.setStep((i % 20) * e.getANIMATIONMULTIPL());
         float xChange = e.getSpeed() * uti::pixDir[e.getDir()].xRate * deltaTime,
               yChange = e.getSpeed() * uti::pixDir[e.getDir()].yRate * deltaTime;
@@ -72,6 +73,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& camer
         }
         e.updateMovebox();
         e.updateClickBox();
+        mtx->unlock();
         Sleep(5);
     }
     if (e.isMoving()) e.setAnimationID(1);

@@ -353,7 +353,7 @@ void t_move_player()
 
 void t_run_spell(Spell* spell)
 {
-    spell->run(v_elements[1], *c, m, cameraLock);
+    spell->run(v_elements[1], *c, m, cameraLock, &mtx);
     if (c->getCountDir() == 0) c->setMoving(false);
 }
 
@@ -361,7 +361,7 @@ void t_run_aa(AutoAttack* spell)
 {
     while (!c->getCancelAA())
     {
-        spell->run(v_elements[1], *c, m, cameraLock);
+        spell->run(v_elements[1], *c, m, cameraLock, nullptr);
         if (c->getCountDir() == 0) c->setMoving(false);
         for (int p = 0; p < 1000; p++)
         {

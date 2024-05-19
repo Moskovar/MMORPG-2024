@@ -25,7 +25,7 @@ AutoAttack::AutoAttack(SDL_Renderer* renderer) : Spell("Auto attack")
     }
 }
 
-void AutoAttack::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& cameraLock)
+void AutoAttack::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& cameraLock, mutex* mtx)
 {
     e.setAnimationID(this->animationID);
     e.setAAActive(true);
@@ -37,7 +37,7 @@ void AutoAttack::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& came
             Sleep(1);
         }
         //cout << e.step << endl;
-        e.setStep(i % 21);
+        e.setStep((i % 21) * e.getANIMATIONMULTIPL());
         if ((e.getDir() == 0 || e.getDir() == 2) && i == 16) break; else e.increaseStep();
     }
     if (e.isMoving()) e.setAnimationID(1);

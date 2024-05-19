@@ -11,6 +11,7 @@
 
 #include "Element.h"
 #include "Map.h"
+#include <mutex>
 
 class Entity;
 
@@ -22,7 +23,7 @@ class Spell
 	public:
 		//Spell() {};
 		Spell(string name);
-		virtual void run(vector<Element*>& v_elements, Entity& e, Map& m, bool& cameraLock) = 0;
+		virtual void run(vector<Element*>& v_elements, Entity& e, Map& m, bool& cameraLock, mutex* mtx) = 0;
 
 		map<float, SDL_Surface*[30]>& getImg()  { return img;  }
 		map<float, SDL_Texture*[30]>& getText() { return text; }
