@@ -26,6 +26,8 @@ public:
 	int   getYMap()    { return yMap;    }
 
 	void setXYMap(int x, int y) { this->xMap = x;	this->yMap = y; }
+	void setX(float x) { this->x = x; pos.x = x; }
+	void setY(float y) { this->y = y; pos.y = y; }
 	void addXMap(int x) { xMap += x; }
 	void addYMap(int y) { yMap += y; }
 	void addXOffset(float xOffset) { this->xOffset += xOffset; }

@@ -18,10 +18,10 @@ class MapFragment : public Element
 
 		bool isInFront(int x, int y) { return false; }
 		bool check_collisions(int x, int y) { return false; }
-		void draw(SDL_Renderer* renderer) { SDL_RenderCopy(renderer, text, NULL, &pos); }
+		void draw(SDL_Renderer* renderer) { if(visible) SDL_RenderCopy(renderer, text, NULL, &pos); }
 
 	private:
-		bool visible = false;
+		bool visible = true;
 
 		SDL_Surface* img  = nullptr;
 		SDL_Texture* text = nullptr;

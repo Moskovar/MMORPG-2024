@@ -15,6 +15,13 @@ Map::~Map()
 	printf("Map cleared !\n");
 }
 
+void Map::addOffset(int r, int c, float xOffset, float yOffset)
+{
+
+	fragments[r][c].addXOffset(xOffset);
+	fragments[r][c].addYOffset(yOffset);
+}
+
 void Map::addOffset(float xOffset, float yOffset)
 {
 	for (int i = 0; i < rows; i++) 
@@ -29,5 +36,5 @@ void Map::draw(SDL_Renderer* renderer)
 {
 	for (int i = 0; i < rows; i++)
 		for (int j = 0; j < cols; j++)
-			if (fragments[i][j].isVisible()) fragments[i][j].draw(renderer);
+			fragments[i][j].draw(renderer);
 }

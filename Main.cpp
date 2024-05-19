@@ -35,7 +35,7 @@ int width = 1920, height = 1080;
 
 Warrior* c;
 UI* ui;
-Map m(1, 1);
+Map m(10, 10);
 MapFragment* mf = nullptr;
 vector<vector<Element*>> v_elements = { {}, {} };
 
@@ -94,8 +94,6 @@ int main(int argc, char* argv[])
     SDL_RenderCopy(renderer, loading_screen_texture, NULL, &loading_screen_pos);
     SDL_RenderPresent(renderer);
     
-    m.addFragment(0, 0, "grass", renderer);
-    m.setFragmentVisible(0, 0, true);
     mf = new MapFragment("grass", renderer);
     int posx = 850, posy = 600;
     c = new Warrior("Titus", posx, posy, uti::Category::PLAYER, renderer);
@@ -129,11 +127,20 @@ int main(int argc, char* argv[])
     c->resetPos();
 
     //--- Déplacement des fragments de map par rapport au personnage ---//
-    m.addOffset(width / 2 - 125 - posx, height / 2 - 125 - posy);
-    m.resetPos();
-    /*mf.addXOffset(width / 2 - 125 - posx);
-    mf.addYOffset(height / 2 - 125 - posy);
-    mf.resetPos();*/
+    //m.addOffset(width / 2 - 125 - posx, height / 2 - 125 - posy);
+    //m.resetPos();
+    for (int i = 0; i < 10; i++)
+        for (int j = 0; j < 10; j++)
+        {
+            m.addFragment(i, j, "grass", renderer);
+            m.setFragmentVisible(i, j, true);
+            m.addOffset(i, j, width / 2 - 125 - posx + j * 1920, height / 2 - 125 - posy + i * 1080);
+            m.resetPos();
+        }
+
+    //m.setUp(width / 2 - 125 - posx, height / 2 - 125 - posy);
+
+    //m.showOffset();
 
     sort(v_elements[1].begin(), v_elements[1].end(), compareZ);
 
@@ -158,7 +165,7 @@ int main(int argc, char* argv[])
     bool playerDrawn = false;
     //c->setMoving(true);
     //c->countDir += uti::Direction::LEFT;  c->left = true;  c->update();
-    cameraLock = true;
+    //cameraLock = true;
     while (run) 
     {
         startTime = SDL_GetTicks();
@@ -339,7 +346,7 @@ void t_move_player()
         currentTime = SDL_GetTicks();
         deltaTime = (currentTime - lastTime) / 1000.0f; // Convert to seconds
         lastTime = currentTime;
-        if (c->isMoving() && !c->isSpellActive()) c->move(v_elements[1], m, cameraLock, deltaTime);
+        if (c->isMoving() && !c->isSpellActive()) { mtx.lock(); c->move(v_elements[1], m, cameraLock, deltaTime); mtx.unlock(); }
         SDL_Delay(1);
     }
 }
@@ -381,6 +388,7 @@ void t_update_camera()
             {
                 if (mouseX == 0)
                 {
+                    mtx.lock();
                     for (vector<Element*> v : v_elements)
                         for (Element* e : v)
                         {
@@ -390,9 +398,11 @@ void t_update_camera()
 
                     mf->updateXOffset(posi_cameraSpeed);
                     m.updateXOffset(posi_cameraSpeed);
+                    mtx.unlock();
                 }//on déplace la caméra dans un sens et on enregistre l'offset dans l'autre sens pour revenir au point de départ
                 else if (mouseX >= 1919)
                 {
+                    mtx.lock();
                     for (vector<Element*> v : v_elements)
                         for (Element* e : v)
                         {
@@ -402,9 +412,11 @@ void t_update_camera()
 
                     mf->updateXOffset(nega_cameraSpeed);    
                     m.updateXOffset(-posi_cameraSpeed);
+                    mtx.unlock();
                 }
                 if (mouseY == 0)
                 {
+                    mtx.lock();
                     //--- Mise à jour des éléments ---//
                     for (vector<Element*> v : v_elements)
                         for (Element* e : v)
@@ -417,10 +429,11 @@ void t_update_camera()
                     mf->updateYOffset(posi_cameraSpeed);
                     m.updateYOffset(posi_cameraSpeed);
 
-                            
+                    mtx.unlock();
                 }
                 else if (mouseY >= 1079)
                 {
+                    mtx.lock();
                     //--- Mise à jour des éléments ---//
                     for (vector<Element*> v : v_elements)
                         for (Element* e : v)
@@ -431,6 +444,7 @@ void t_update_camera()
                     //--- Mise à jour de la position des fragments de map ---//
                     mf->updateYOffset(nega_cameraSpeed);
                     m.updateYOffset(-posi_cameraSpeed);
+                    mtx.unlock();
                 }
             }
         //else for(Element* e : *(v_elements)[1]) e->resetPos();//applique le offset aux elements du décors
