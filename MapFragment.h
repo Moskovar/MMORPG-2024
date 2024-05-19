@@ -7,19 +7,22 @@
 class MapFragment : public Element
 {
 	public:
+		MapFragment() {}
 		MapFragment(string src, SDL_Renderer* renderer);
 
+		bool isVisible() { return visible; }
+
+		void setVisible(bool state) { visible = state; }
 		void setX(int x) { this->pos.x = x; }
 		void setY(int y) { this->pos.y = y; }
-		void updateXOffset(float& cameraSpeed) { x += cameraSpeed; pos.x = x; xOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
-		void updateYOffset(float& cameraSpeed) { y += cameraSpeed; pos.y = y; yOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
-
 
 		bool isInFront(int x, int y) { return false; }
 		bool check_collisions(int x, int y) { return false; }
 		void draw(SDL_Renderer* renderer) { SDL_RenderCopy(renderer, text, NULL, &pos); }
 
 	private:
+		bool visible = false;
+
 		SDL_Surface* img  = nullptr;
 		SDL_Texture* text = nullptr;
 };

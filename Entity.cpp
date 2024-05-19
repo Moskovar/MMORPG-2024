@@ -13,7 +13,7 @@ Entity::Entity(std::string name, float x, float y, int category, string imgSrc, 
 
     this->category = category;
     this->step     = 0;
-    this->speed    = 15;
+    this->speed    = 400;
     this->dir      = 2;
     this->countDir = 0;
 
@@ -93,18 +93,15 @@ Entity::~Entity()
     std::cout << "Entity: " << pseudo.getFont().getText() << " cleared !" << std::endl;
 }
 
-void Entity::move(vector<Element*>& v_elements, vector<MapFragment*>& v_mapFragments, bool& cameraLock)
+void Entity::move(vector<Element*>& v_elements, Map& m, bool& cameraLock, float& deltaTime)
 {
-    Sleep(15); // /2 pour tapisser le sentiment de pause avant et après le mouvement
+    float xChange = speed * xRate * deltaTime,
+          yChange = speed * yRate * deltaTime;
 
-    Uint32 prevTime = SDL_GetTicks64();
+    updateMapPos(xChange, yChange);//pq ne pas juste changer l'offset si camera pas lock et changer le X si caméra lock ?? ça evite un double parcourt des maps pour le resetpos
 
-    float xChange = speed * xRate,
-          yChange = speed * yRate;
-
-    updateMapPos(xChange, yChange);
-    
     bool collision = false;
+
     for (Element* b : v_elements) if (b->check_collisions(xMovebox + xChange, yMovebox + yChange)) { collision = true; break; }
     if (!collision)
     {
@@ -114,11 +111,7 @@ void Entity::move(vector<Element*>& v_elements, vector<MapFragment*>& v_mapFragm
             v_elements[i]->addYOffset(-yChange);
         }
 
-        for (MapFragment* mf : v_mapFragments)
-        {
-            mf->addXOffset(-xChange);
-            mf->addYOffset(-yChange);
-        }
+        m.addOffset(-xChange, -yChange);
 
         if (!cameraLock)
         {
@@ -129,43 +122,42 @@ void Entity::move(vector<Element*>& v_elements, vector<MapFragment*>& v_mapFragm
         }
         else
         {
-            for (Element* e : v_elements) e->resetPos();//applique le offset aux elements du décors
-            for (MapFragment* mf : v_mapFragments) { mf->resetPos(); }
+            //for (Element* e : v_elements) e->resetPos(-xChange, -yChange);//applique le offset aux elements du décors
+            for (Element* e : v_elements) e->resetPos();
+            m.resetPos();
         }
     }
 
     updateMovebox();
     updateClickBox();
 
+
     if (dir == 0)
-        if (step < 9)  step++;
+        if (step < 9 * ANIMATIONMULTIPL)  step++;
         else                                step = 0;
     else if (dir == 1)
-        if (step < 11) step++;
+        if (step < 11 * ANIMATIONMULTIPL) step++;
         else                                step = 0;
     else if (dir == 2)
-        if (step < 8)  step++;
+        if (step < 8 * ANIMATIONMULTIPL)  step++;
         else                                step = 0;
     else if (dir == 3)
-        if (step < 11) step++;
+        if (step < 11 * ANIMATIONMULTIPL) step++;
         else                                step = 0;
     else if (dir == 0.5)
-        if (step < 11) step++;
+        if (step < 11 * ANIMATIONMULTIPL) step++;
         else                                step = 0;
     else if (dir == 1.5)
-        if (step < 11) step++;
+        if (step < 11 * ANIMATIONMULTIPL) step++;
         else                                step = 0;
     else if (dir == 2.5)
-         if (step < 11) step++;
+        if (step < 11 * ANIMATIONMULTIPL) step++;
         else                                 step = 0;
     else if (dir == 3.5)
-        if (step < 11) step++;
+        if (step < 11 * ANIMATIONMULTIPL) step++;
         else                                step = 0;
 
-    if(!moving) step = 0;
-    
-    //cout << 15 - (SDL_GetTicks64() - prevTime) << endl;
-    Sleep(15 - (SDL_GetTicks64() - prevTime));
+    if (!moving) step = 0;
 }
 
 bool Entity::inClickBox(int x, int y)

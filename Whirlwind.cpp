@@ -23,19 +23,23 @@ Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
     }
 }
 
-void Whirlwind::run(vector<Element*>& v_elements, Entity& e, vector<MapFragment*>& v_mapFragments, bool& cameraLock)
+void Whirlwind::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& cameraLock)
 {
-    Uint32 prevTime;
+    Uint32 lastTime = SDL_GetTicks64();
+    Uint32 currentTime;
+    float deltaTime;
     e.setSpellActive(true);
     e.setAnimationID(animationID);
     e.setStep(0);
     int step = 0;
     for (int i = 0; i < 100; i++)
     {   
-        prevTime = SDL_GetTicks64();
-        e.setStep(i % 20);
-        float xChange = e.getSpeed() / 4 * uti::pixDir[e.getDir()].xRate,
-              yChange = e.getSpeed() / 4 * uti::pixDir[e.getDir()].yRate;
+        currentTime = SDL_GetTicks();
+        deltaTime = (currentTime - lastTime) / 1000.0f; // Convert to seconds
+        lastTime = currentTime;
+        e.setStep((i % 20) * e.getANIMATIONMULTIPL());
+        float xChange = e.getSpeed() * uti::pixDir[e.getDir()].xRate * deltaTime,
+              yChange = e.getSpeed() * uti::pixDir[e.getDir()].yRate * deltaTime;
         
         bool collision = false;
         for (Element* b : v_elements) if (b->check_collisions(e.getXMovebox() + xChange, e.getYMovebox() + yChange)) { collision = true; break; }
@@ -47,16 +51,12 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, vector<MapFragment*
                 v_elements[i]->addYOffset(-yChange);
             }
 
-            for (MapFragment* mf : v_mapFragments)
-            {
-                mf->addXOffset(-xChange);
-                mf->addYOffset(-yChange);
-            }
+            m.addOffset(-xChange, -yChange);
 
             if (!cameraLock)
             {
-                e.increaseX(xChange);
-                e.increaseY(yChange);
+                e.addX(xChange);
+                e.addY(yChange);
 
                 e.addXOffset(-xChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
                 e.addYOffset(-yChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
@@ -64,7 +64,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, vector<MapFragment*
             else
             {
                 for (Element* e : v_elements) e->resetPos();//applique le offset aux elements du décors
-                for (MapFragment* mf : v_mapFragments) { mf->resetPos(); }
+                m.resetPos();
             }
 
             e.addXMap(xChange);
@@ -72,7 +72,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, vector<MapFragment*
         }
         e.updateMovebox();
         e.updateClickBox();
-        Sleep(5 - (SDL_GetTicks64() - prevTime));
+        Sleep(5);
     }
     if (e.isMoving()) e.setAnimationID(1);
     else          e.setAnimationID(0);

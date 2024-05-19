@@ -9,7 +9,9 @@
 #include <thread>
 #include <vector>
 #include <algorithm>
+#include <mutex>
 
+#include "Map.h";
 #include "MapFragment.h"
 #include "Warrior.h"
 #include "NPC.h"
@@ -19,8 +21,11 @@
 
 using namespace std;
 
+mutex mtx;
+
 SDL_Window* window{ nullptr };
 SDL_Renderer* renderer{ nullptr };
+
 
 SDL_bool run = SDL_TRUE;
 Uint32 flags;
@@ -28,23 +33,29 @@ float deltaTime = 0;
 
 int width = 1920, height = 1080;
 
-vector<MapFragment*> v_mapFragments;
+Warrior* c;
+UI* ui;
+Map m(1, 1);
+MapFragment* mf = nullptr;
 vector<vector<Element*>> v_elements = { {}, {} };
 
 float posi_cameraSpeed = 5, nega_cameraSpeed = -posi_cameraSpeed;
 bool cameraLock = false;
 int mouseX = -1, mouseY = -1;
 
-void t_move_player(Entity* e);
-void t_run_spell(Spell* spell, Entity* e);
-void t_run_aa(AutoAttack* spell, Entity* e);
-void t_run_screenMsg(UI* ui, SDL_Renderer* renderer);
-void t_update_camera(Entity* e);
+void t_move_player();
+void t_run_spell(Spell* spell);
+void t_run_aa(AutoAttack* spell);
+void t_run_screenMsg();
+void t_update_camera();
 void draw_circle(SDL_Renderer* renderer, int center_x, int center_y, int radius);
 bool compareZ(Element* e1, Element* e2);
-void handleLeftClick(SDL_Event& events, UI& ui, Entity& entity, thread& t_screenMsg);
-void handleRightClick(SDL_Event& events, UI& ui, Entity& entity, thread& t_screenMsg);
-
+void handleLeftClick(SDL_Event& events , thread& t_screenMsg);
+void handleRightClick(SDL_Event& events, thread& t_screenMsg);
+void resetAllElementsPos();
+void t_run_handleKeyEvents();
+const int FPS = 60;
+const int FRAME_TIME = 1000 / FPS;
 int main(int argc, char* argv[])
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -58,6 +69,10 @@ int main(int argc, char* argv[])
         SDL_Quit();
         return 1;
     }
+
+    //if (SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1") == SDL_FALSE) {
+    //    std::cerr << "Impossible d'activer la VSync : " << SDL_GetError() << std::endl;
+    //}
 
     if (TTF_Init() < 0) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG] > %s", TTF_GetError());
@@ -79,13 +94,14 @@ int main(int argc, char* argv[])
     SDL_RenderCopy(renderer, loading_screen_texture, NULL, &loading_screen_pos);
     SDL_RenderPresent(renderer);
     
-    MapFragment mf("grass", renderer);
-    v_mapFragments.push_back(&mf);
+    m.addFragment(0, 0, "grass", renderer);
+    m.setFragmentVisible(0, 0, true);
+    mf = new MapFragment("grass", renderer);
     int posx = 850, posy = 600;
-    Warrior w("Titus", posx, posy, uti::Category::PLAYER, renderer);
-    w.setXYMap(posx, posy);
+    c = new Warrior("Titus", posx, posy, uti::Category::PLAYER, renderer);
+    c->setXYMap(posx, posy);
     NPC npc("DENT", 900, 300, uti::Category::NPC, "character/warrior", false, renderer);
-    UI ui(window, renderer, &w);
+    ui = new UI(window, renderer, c);
 
     Building b(0, 0, 1000, 672, renderer, "tavern/tavern");
     Building b2(250, 1500, 1000, 672, renderer, "tavern/tavern");
@@ -93,7 +109,7 @@ int main(int argc, char* argv[])
     Building b4(1500, 800, 1000, 672, renderer, "tavern/tavern");
     
     //qb.addQuest(new Quest("First quest", "First quest in the world", 100, window, renderer));
-    v_elements[0].push_back(dynamic_cast<Element*>(&w));
+    v_elements[0].push_back(dynamic_cast<Element*>(c));
     v_elements[1].push_back(dynamic_cast<Element*>(&b2));
     v_elements[1].push_back(dynamic_cast<Element*>(&b));
     v_elements[1].push_back(dynamic_cast<Element*>(&b3));
@@ -108,20 +124,26 @@ int main(int argc, char* argv[])
     }
 
     //--- Personnage au milieu de l'écran ---//
-    w.addXOffset(width / 2 - 125 - posx);
-    w.addYOffset(height / 2 - 125 - posy);
-    w.resetPos();
+    c->addXOffset(width / 2 - 125 - posx);
+    c->addYOffset(height / 2 - 125 - posy);
+    c->resetPos();
+
+    //--- Déplacement des fragments de map par rapport au personnage ---//
+    m.addOffset(width / 2 - 125 - posx, height / 2 - 125 - posy);
+    m.resetPos();
+    /*mf.addXOffset(width / 2 - 125 - posx);
+    mf.addYOffset(height / 2 - 125 - posy);
+    mf.resetPos();*/
 
     sort(v_elements[1].begin(), v_elements[1].end(), compareZ);
 
     // Variables pour le calcul du delta time
-    thread t_player(t_move_player, &w);
+    thread t_player(t_move_player);
     thread t_spell;
     thread t_aa;
     thread t_screenMsg;
+    thread t_camera(t_update_camera);
     
-    thread t_camera(t_update_camera, &w);
-    bool playerDrawn = false;
     SDL_RenderClear(renderer);
     SDL_SetWindowSize(window, width, height);
     SDL_SetWindowPosition(window, 0, 0);
@@ -130,86 +152,109 @@ int main(int argc, char* argv[])
     SDL_SetWindowGrab(window, SDL_TRUE);
     //SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
     SDL_Event events;
+    //thread t_handleKeyEvents(t_run_handleKeyEvents);
+    Uint32 startTime;
+    int frameTime;
+    bool playerDrawn = false;
+    //c->setMoving(true);
+    //c->countDir += uti::Direction::LEFT;  c->left = true;  c->update();
+    cameraLock = true;
     while (run) 
     {
-        //cout << w.getXMap() << " : " << w.getYMap() << endl;
+        startTime = SDL_GetTicks();
+        //cout << c->getXMap() << " : " << c->getYMap() << endl;
         sort(v_elements[1].begin(), v_elements[1].end(), compareZ);
-        while (SDL_PollEvent(&events)) 
+        while (SDL_PollEvent(&events))
         {
             switch (events.type)
             {
                 case SDL_WINDOWEVENT: if (events.window.event == SDL_WINDOWEVENT_CLOSE) run = SDL_FALSE; break;
                 case SDL_KEYDOWN: // Un événement de type touche enfoncée est effectué
                     //--- Déplacements ---//
-                    if (events.key.keysym.sym == SDLK_z)     { if (!w.up)    w.countDir += uti::Direction::UP;    w.up = true;    w.update(); }
-                    if (events.key.keysym.sym == SDLK_d)     { if (!w.right) w.countDir += uti::Direction::RIGHT; w.right = true; w.update(); }
-                    if (events.key.keysym.sym == SDLK_s)     { if (!w.down)  w.countDir += uti::Direction::DOWN;  w.down = true;  w.update(); }
-                    if (events.key.keysym.sym == SDLK_q)     { if (!w.left)  w.countDir += uti::Direction::LEFT;  w.left = true;  w.update(); }
+                    if (events.key.keysym.sym == SDLK_z) { if (!c->up)    c->countDir += uti::Direction::UP;    c->up = true;    c->update(); }
+                    if (events.key.keysym.sym == SDLK_d) { if (!c->right) c->countDir += uti::Direction::RIGHT; c->right = true; c->update(); }
+                    if (events.key.keysym.sym == SDLK_s) { if (!c->down)  c->countDir += uti::Direction::DOWN;  c->down = true;  c->update(); }
+                    if (events.key.keysym.sym == SDLK_q) { if (!c->left)  c->countDir += uti::Direction::LEFT;  c->left = true;  c->update(); }
                     //--- Spells ---//
-                    if (events.key.keysym.sym == SDLK_a)     { if (!w.isSpellActive()) { w.setCancelAA(true); if (!w.isSpellActive()) { if (t_spell.joinable()) t_spell.join(); t_spell = thread(t_run_spell, w.getSpell(1), &w); } } }
-                    if (events.key.keysym.sym == SDLK_e)     { if (!w.isSpellActive()) { if (!w.isAAActive()) { if (t_aa.joinable()) t_aa.join(); t_aa = thread(t_run_aa, dynamic_cast<AutoAttack*>(w.getSpell(0)), &w); } } }
-                    
-                    //--- Caméra ---//
-                    if (events.key.keysym.sym == SDLK_SPACE) { for (vector<Element*> v : v_elements) for (Element* e : v) e->resetPos(); cameraLock = true; w.updateMovebox(); }
-                    if (events.key.keysym.sym == SDLK_y)     { cameraLock = !cameraLock; for (vector<Element*> v : v_elements) for (Element* e : v) e->resetPos(); w.updateMovebox(); }
+                    if (events.key.keysym.sym == SDLK_a) { if (!c->isSpellActive()) { c->setCancelAA(true); if (!c->isSpellActive()) { if (t_spell.joinable()) t_spell.join(); t_spell = thread(t_run_spell, c->getSpell(1)); } } }
+                    if (events.key.keysym.sym == SDLK_e) { if (!c->isSpellActive()) { if (!c->isAAActive()) { if (t_aa.joinable()) t_aa.join(); t_aa = thread(t_run_aa, dynamic_cast<AutoAttack*>(c->getSpell(0))); } } }
+
+                //    //--- Caméra ---//
+                    if (events.key.keysym.sym == SDLK_SPACE) { cameraLock = true;        resetAllElementsPos(); c->updateMovebox(); }
+                    if (events.key.keysym.sym == SDLK_y) { cameraLock = !cameraLock; resetAllElementsPos(); c->updateMovebox(); }
                     break;
                 case SDL_KEYUP: // Un événement de type touche relâchée est effectué                
-                    if (events.key.keysym.sym == SDLK_ESCAPE) { run = SDL_FALSE; w.setAlive(false); w.setCancelAA(true); }
-                    if (events.key.keysym.sym == SDLK_z)      { if (w.up)    w.countDir -= uti::Direction::UP;     w.up = false;    w.update(); }
-                    if (events.key.keysym.sym == SDLK_d)      { if (w.right) w.countDir -= uti::Direction::RIGHT;  w.right = false; w.update(); }
-                    if (events.key.keysym.sym == SDLK_q)      { if (w.left)  w.countDir -= uti::Direction::LEFT;   w.left = false;  w.update(); }
-                    if (events.key.keysym.sym == SDLK_s)      { if (w.down)  w.countDir -= uti::Direction::DOWN;   w.down = false;  w.update(); }
+                    if (events.key.keysym.sym == SDLK_ESCAPE) { run = SDL_FALSE; c->setAlive(false); c->setCancelAA(true); }
+                    if (events.key.keysym.sym == SDLK_z) { if (c->up)    c->countDir -= uti::Direction::UP;     c->up = false;    c->update(); }
+                    if (events.key.keysym.sym == SDLK_d) { if (c->right) c->countDir -= uti::Direction::RIGHT;  c->right = false; c->update(); }
+                    if (events.key.keysym.sym == SDLK_q) { if (c->left)  c->countDir -= uti::Direction::LEFT;   c->left = false;  c->update(); }
+                    if (events.key.keysym.sym == SDLK_s) { if (c->down)  c->countDir -= uti::Direction::DOWN;   c->down = false;  c->update(); }
                     if (events.key.keysym.sym == SDLK_SPACE) cameraLock = false;
 
-                    //--- UI SHORTCUTS ---//
-                    if (events.key.keysym.sym == SDLK_l) ui.setQBVisible(!ui.isQBVisible());
+                //    //--- UI SHORTCUTS ---//
+                    if (events.key.keysym.sym == SDLK_l) ui->setQBVisible(!ui->isQBVisible());
                     break;
                 case SDL_MOUSEMOTION:
                     mouseX = events.motion.x;   mouseY = events.motion.y;
                     break;
-                case SDL_MOUSEBUTTONDOWN:
-                    cout << mouseX << " : " << mouseY << endl;
-                    if      (events.button.button == SDL_BUTTON_LEFT)  handleLeftClick (events, ui, w, t_screenMsg);
-                    else if (events.button.button == SDL_BUTTON_RIGHT) handleRightClick(events, ui, w, t_screenMsg);
-                    break;
+            case SDL_MOUSEBUTTONDOWN:
+                cout << mouseX << " : " << mouseY << endl;
+                if (events.button.button == SDL_BUTTON_LEFT)  handleLeftClick(events, t_screenMsg);
+                else if (events.button.button == SDL_BUTTON_RIGHT) handleRightClick(events, t_screenMsg);
+                break;
             }
         }
-
+      
+        mtx.lock();
+        //cout << "render lock" << endl;
         SDL_RenderClear(renderer);
+        //mf->draw(renderer);
+        m.draw(renderer);
 
-        for (MapFragment* mf : v_mapFragments) mf->draw(renderer);
-        
         for (int i = 0; i < v_elements[1].size(); i++)
         {
-            if(!playerDrawn)
-                if (!(v_elements[1])[i]->isInFront(w.getXMovebox(), w.getYMovebox()))
+            if (!playerDrawn)
+                if (!(v_elements[1])[i]->isInFront(c->getXMovebox(), c->getYMovebox()))
                     (v_elements[1])[i]->draw(renderer);
                 else
                 {
-                    w.draw(renderer);
+                    c->draw(renderer);
                     playerDrawn = true;
                     (v_elements[1])[i]->draw(renderer);
                 }
             else
                 (v_elements[1])[i]->draw(renderer);
         }
-        if(!playerDrawn) w.draw(renderer);
+        if (!playerDrawn)c->draw(renderer);
         playerDrawn = false;
 
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
 
-        draw_circle(renderer, w.getXMovebox() + w.getSpeed() * w.getXRate(), w.getYMovebox() + w.getSpeed() * w.getYRate(), 10);
+        draw_circle(renderer, c->getXMovebox()/* + c->getSpeed() * c->getXRate()*/, c->getYMovebox()/* + c->getSpeed() * c->getYRate()*/, 10);
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderDrawRect(renderer, npc.getPClickBox());
-        SDL_RenderDrawRect(renderer, w.getPClickBox());
+        //SDL_RenderDrawRect(renderer, npc.getPClickBox());
+        SDL_RenderDrawRect(renderer, c->getPClickBox());
 
         //--- DRAW UI ---//
-        ui.draw(renderer);
+        ui->draw(renderer);
         //--------------//
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderPresent(renderer);
-        Sleep(1);
+
+        frameTime = SDL_GetTicks() - startTime;
+
+        //// Limiter les FPS en attendant le temps restant
+        //if (frameTime < FRAME_TIME) {
+        //    SDL_Delay(FRAME_TIME - frameTime);
+        //    //cout << FRAME_TIME - frameTime << endl;
+        //}
+        //cout << "render unlock" << endl;
+        mtx.unlock();
+        SDL_Delay(1);
+
+        //cout << "MAJ" << endl;
+        //cout << SDL_GetTicks() - startTime << endl;
     }
 
     if(t_player.joinable())  t_player.join();
@@ -217,53 +262,116 @@ int main(int argc, char* argv[])
     if(t_aa.joinable())      t_aa.join();
     if (t_camera.joinable()) t_camera.join();
     if (t_screenMsg.joinable()) t_screenMsg.join();
+    //if (t_handleKeyEvents.joinable()) t_handleKeyEvents.join();
 
     SDL_FreeSurface(loading_screen_img);
     SDL_DestroyTexture(loading_screen_texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+    delete mf;
+    mf = nullptr;
+
+    delete c;
+    c = nullptr;
 
     return 0;
 }
 
-void t_move_player(Entity* e)
+void t_run_handleKeyEvents()
 {
-    while (e->isAlive())
+    SDL_Event events;
+    while (true)
     {
-        if (e->isMoving() && !e->isSpellActive()) e->move(v_elements[1], v_mapFragments,cameraLock);
-        Sleep(1);
+        while (SDL_PollEvent(&events))
+        {
+            switch (events.type)
+            {
+            //case SDL_WINDOWEVENT: if (events.window.event == SDL_WINDOWEVENT_CLOSE) run = SDL_FALSE; break;
+            //case SDL_KEYDOWN: // Un événement de type touche enfoncée est effectué
+            //    //--- Déplacements ---//
+            //    if (events.key.keysym.sym == SDLK_z) { if (!c->up)    c->countDir += uti::Direction::UP;    c->up = true;    c->update(); }
+            //    if (events.key.keysym.sym == SDLK_d) { if (!c->right) c->countDir += uti::Direction::RIGHT; c->right = true; c->update(); }
+            //    if (events.key.keysym.sym == SDLK_s) { if (!c->down)  c->countDir += uti::Direction::DOWN;  c->down = true;  c->update(); }
+            //    if (events.key.keysym.sym == SDLK_q) { if (!c->left)  c->countDir += uti::Direction::LEFT;  c->left = true;  c->update(); }
+            //    //--- Spells ---//
+            //    //if (events.key.keysym.sym == SDLK_a) { if (!c->isSpellActive()) { c->setCancelAA(true); if (!c->isSpellActive()) { if (t_spell.joinable()) t_spell.join(); t_spell = thread(t_run_spell, c->getSpell(1)); } } }
+            //    //if (events.key.keysym.sym == SDLK_e) { if (!c->isSpellActive()) { if (!c->isAAActive()) { if (t_aa.joinable()) t_aa.join(); t_aa = thread(t_run_aa, dynamic_cast<AutoAttack*>(c->getSpell(0))); } } }
+
+            //    //--- Caméra ---//
+            //    if (events.key.keysym.sym == SDLK_SPACE) { cameraLock = true;        resetAllElementsPos(); c->updateMovebox(); }
+            //    if (events.key.keysym.sym == SDLK_y) { cameraLock = !cameraLock; resetAllElementsPos(); c->updateMovebox(); }
+            //    break;
+            //case SDL_KEYUP: // Un événement de type touche relâchée est effectué                
+            //    if (events.key.keysym.sym == SDLK_ESCAPE) { run = SDL_FALSE; c->setAlive(false); c->setCancelAA(true); }
+            //    if (events.key.keysym.sym == SDLK_z) { if (c->up)    c->countDir -= uti::Direction::UP;     c->up = false;    c->update(); }
+            //    if (events.key.keysym.sym == SDLK_d) { if (c->right) c->countDir -= uti::Direction::RIGHT;  c->right = false; c->update(); }
+            //    if (events.key.keysym.sym == SDLK_q) { if (c->left)  c->countDir -= uti::Direction::LEFT;   c->left = false;  c->update(); }
+            //    if (events.key.keysym.sym == SDLK_s) { if (c->down)  c->countDir -= uti::Direction::DOWN;   c->down = false;  c->update(); }
+            //    if (events.key.keysym.sym == SDLK_SPACE) cameraLock = false;
+
+            //    //--- UI SHORTCUTS ---//
+            //    if (events.key.keysym.sym == SDLK_l) ui->setQBVisible(!ui->isQBVisible());
+            //    break;
+            //case SDL_MOUSEMOTION:
+            //    mouseX = events.motion.x;   mouseY = events.motion.y;
+            //    break;
+            case SDL_MOUSEBUTTONDOWN:
+                //cout << mouseX << " : " << mouseY << endl;
+                cout << "OKK" << endl;
+                //if (events.button.button == SDL_BUTTON_LEFT)  handleLeftClick(events, t_screenMsg);
+                //else if (events.button.button == SDL_BUTTON_RIGHT) handleRightClick(events, t_screenMsg);
+                break;
+            }
+        }
+        SDL_Delay(1);
     }
 }
 
-void t_run_spell(Spell* spell, Entity* e)
+void t_move_player()
 {
-    spell->run(v_elements[1], *e, v_mapFragments, cameraLock);
-    if (e->getCountDir() == 0) e->setMoving(false);
+    Uint32 lastTime = SDL_GetTicks64();
+    Uint32 currentTime;
+    float deltaTime;
+    
+    while (c->isAlive())
+    {
+        currentTime = SDL_GetTicks();
+        deltaTime = (currentTime - lastTime) / 1000.0f; // Convert to seconds
+        lastTime = currentTime;
+        if (c->isMoving() && !c->isSpellActive()) c->move(v_elements[1], m, cameraLock, deltaTime);
+        SDL_Delay(1);
+    }
 }
 
-void t_run_aa(AutoAttack* spell, Entity* e)
+void t_run_spell(Spell* spell)
 {
-    while (!e->getCancelAA())
+    spell->run(v_elements[1], *c, m, cameraLock);
+    if (c->getCountDir() == 0) c->setMoving(false);
+}
+
+void t_run_aa(AutoAttack* spell)
+{
+    while (!c->getCancelAA())
     {
-        spell->run(v_elements[1], *e, v_mapFragments, cameraLock);
-        if (e->getCountDir() == 0) e->setMoving(false);
+        spell->run(v_elements[1], *c, m, cameraLock);
+        if (c->getCountDir() == 0) c->setMoving(false);
         for (int p = 0; p < 1000; p++)
         {
-            if (e->getCancelAA()) break;
+            if (c->getCancelAA()) break;
             Sleep(1);
         }
     }
-    e->setAAActive(false);
+    c->setAAActive(false);
 }
 
-void t_run_screenMsg(UI* ui, SDL_Renderer* renderer)
+void t_run_screenMsg()
 {
-    for (int i = 0; i < 2000 && run; i++) { Sleep(1); }
+    for (int i = 0; i < 2000 && run; i++) { SDL_Delay(1); }
     ui->setScreenMsgVisible(false);
 }
 
-void t_update_camera(Entity* e)
+void t_update_camera()
 {
     while (run)//trouver un moyen de synchro avec le move du joueur
     {
@@ -280,7 +388,8 @@ void t_update_camera(Entity* e)
                             if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
                         }
 
-                    for(MapFragment* mf : v_mapFragments) mf->updateXOffset(posi_cameraSpeed);                            
+                    mf->updateXOffset(posi_cameraSpeed);
+                    m.updateXOffset(posi_cameraSpeed);
                 }//on déplace la caméra dans un sens et on enregistre l'offset dans l'autre sens pour revenir au point de départ
                 else if (mouseX >= 1919)
                 {
@@ -291,7 +400,8 @@ void t_update_camera(Entity* e)
                             if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
                         }
 
-                    for (MapFragment* mf : v_mapFragments) mf->updateXOffset(nega_cameraSpeed);                            
+                    mf->updateXOffset(nega_cameraSpeed);    
+                    m.updateXOffset(-posi_cameraSpeed);
                 }
                 if (mouseY == 0)
                 {
@@ -304,7 +414,8 @@ void t_update_camera(Entity* e)
                         }
 
                     //--- Mise à jour de la position des fragments de map ---//
-                    for (MapFragment* mf : v_mapFragments) mf->updateYOffset(posi_cameraSpeed);
+                    mf->updateYOffset(posi_cameraSpeed);
+                    m.updateYOffset(posi_cameraSpeed);
 
                             
                 }
@@ -318,11 +429,12 @@ void t_update_camera(Entity* e)
                             if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
                         }
                     //--- Mise à jour de la position des fragments de map ---//
-                    for (MapFragment* mf : v_mapFragments) mf->updateYOffset(nega_cameraSpeed);
+                    mf->updateYOffset(nega_cameraSpeed);
+                    m.updateYOffset(-posi_cameraSpeed);
                 }
             }
         //else for(Element* e : *(v_elements)[1]) e->resetPos();//applique le offset aux elements du décors
-        Sleep(1);
+        SDL_Delay(1);
     }
 }
 
@@ -362,36 +474,43 @@ bool compareZ(Element* e1, Element* e2)
     return e1->getY() < e2->getY();
 }
 
-void handleLeftClick(SDL_Event& events, UI& ui, Entity& entity, thread& t_screenMsg)
+void handleLeftClick(SDL_Event& events, thread& t_screenMsg)
 {
     bool targetFound = false;
     for (vector<Element*> v_e : v_elements)
         for (Element* e : v_e)
             if (dynamic_cast<Entity*>(e) && dynamic_cast<Entity*>(e)->inClickBox(events.button.x, events.button.y))
             {
-                ui.setTargetPortrait(dynamic_cast<Entity*>(e)->getPortraitTexture()); targetFound = true;
+                ui->setTargetPortrait(dynamic_cast<Entity*>(e)->getPortraitTexture()); targetFound = true;
                 break;
             }
-    if (!targetFound) ui.setTargetPortrait(nullptr);
+    if (!targetFound) ui->setTargetPortrait(nullptr);
 }
 
-void handleRightClick(SDL_Event& events, UI& ui, Entity& entity, thread& t_screenMsg)
+void handleRightClick(SDL_Event& events, thread& t_screenMsg)
 {
     bool targetFound = false;
     for (vector<Element*> v_e : v_elements)
         for (Element* e : v_e)
             if (dynamic_cast<Entity*>(e) && dynamic_cast<Entity*>(e)->inClickBox(events.button.x, events.button.y))
             {
-                ui.setTargetPortrait(dynamic_cast<Entity*>(e)->getPortraitTexture()); targetFound = true;
-                if (!dynamic_cast<Entity*>(e)->isInClickRange(entity.getXMovebox(), entity.getYMovebox()))
+                ui->setTargetPortrait(dynamic_cast<Entity*>(e)->getPortraitTexture()); targetFound = true;
+                if (!dynamic_cast<Entity*>(e)->isInClickRange(c->getXMovebox(), c->getYMovebox()))
                 {
 
-                    if (!ui.isScreenMsgVisible()) { if (t_screenMsg.joinable()) t_screenMsg.join(); ui.setScreenMsgVisible(true); t_screenMsg = thread(t_run_screenMsg, &ui, renderer); }
+                    if (!ui->isScreenMsgVisible()) { if (t_screenMsg.joinable()) t_screenMsg.join(); ui->setScreenMsgVisible(true); t_screenMsg = thread(t_run_screenMsg); }
                     break;
                 }
 
-                if (dynamic_cast<NPC*>(e)) { ui.getQuestBook()->addQuest(dynamic_cast<NPC*>(e)->getPQuest()); dynamic_cast<NPC*>(e)->getPQuest()->setState(2); }
+                if (dynamic_cast<NPC*>(e)) { ui->getQuestBook()->addQuest(dynamic_cast<NPC*>(e)->getPQuest()); dynamic_cast<NPC*>(e)->getPQuest()->setState(2); }
                 break;
             }
-    if (!targetFound) ui.setTargetPortrait(nullptr);
+    if (!targetFound) ui->setTargetPortrait(nullptr);
+}
+
+void resetAllElementsPos()
+{
+    for (vector<Element*> v_e : v_elements) for (Element* e : v_e) e->resetPos();
+    m.resetPos();
+    mf->resetPos();
 }

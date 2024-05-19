@@ -25,5 +25,5 @@ void Character::draw(SDL_Renderer* renderer)
 {
 	//pseudo.draw(renderer, getPseudoX(), getPseudoY());
 	pseudo.draw(renderer, getPseudoX(), getPseudoY());
-	SDL_RenderCopy(renderer, text[animationID][dir][step], NULL, &this->pos);
+	SDL_RenderCopy(renderer, text[animationID][dir][step / ANIMATIONMULTIPL], NULL, &this->pos);
 }

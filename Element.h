@@ -30,8 +30,11 @@ public:
 	void addYMap(int y) { yMap += y; }
 	void addXOffset(float xOffset) { this->xOffset += xOffset; }
 	void addYOffset(float yOffset) { this->yOffset += yOffset; }
-	virtual void updateXOffset(float& cameraSpeed) { x += cameraSpeed; pos.x = x; xOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
-	virtual void updateYOffset(float& cameraSpeed) { y += cameraSpeed; pos.y = y; yOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
+	void addX(float x) { this->x += x; pos.x = this->x; }
+	void addY(float y) { this->y += y; pos.y = this->y; }
+	void resetPos(float xOffset, float yOffset) { addXOffset(x); addYOffset(y); resetPos(); }
+	virtual void updateXOffset(float cameraSpeed) { x += cameraSpeed; pos.x = x; xOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
+	virtual void updateYOffset(float cameraSpeed) { y += cameraSpeed; pos.y = y; yOffset -= cameraSpeed; }//On envoie le personnage dans un sens et on met le offset dans l'autre pour le retirer ensuite
 	void updateMapPos(int x, int y) { this->xMap += x;	this->yMap += y; }
 
 

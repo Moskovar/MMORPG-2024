@@ -6,15 +6,17 @@
 #include <map>
 #include <iostream>
 #include <vector>
+#include <mutex>
 
 #include "uti.h"
-#include "MapFragment.h"
+#include "Map.h"
 #include "Pseudo.h"
 #include "Whirlwind.h"
 #include "AutoAttack.h"
 //faire un fichier avec tous les includes par classe de personnage pour ne pas avoir à tout include ??
 
 #define IMG_SIZE 16
+#define ANIMATIONMULTIPL 15
 using namespace std;
 
 class Entity : public Element
@@ -34,14 +36,14 @@ class Entity : public Element
 
 		virtual void draw(SDL_Renderer* renderer) = 0;
 
-		void move(vector<Element*>& v_elements, vector<MapFragment*>& v_mapFragments, bool& cameraLock);
+		void move(vector<Element*>& v_elements, Map& m, bool& cameraLock, float& deltaTime);
 
 		Spell* getSpell(int i)			  { return spells[i];												  }
 		Pseudo		 getPseudo()          { return this->pseudo;											  }
 		float		 getPseudoX()         { return this->x + 125 - this->pseudo.getWidth() / 2;			      }
 		float		 getPseudoY()         { return this->y + 35;											      }
 		string		 getCategory()        { return uti::categories[uti::Language::FR][uti::Category::PLAYER]; }
-		short		 getStep()            { return this->step;												  }
+		short		 getStep()            { return this->step / ANIMATIONMULTIPL;												  }
 		SDL_Rect	 getPos()             { return this->pos;												  }
 		float      	 getX()		          { return this->x;												      }
 		float      	 getY()		          { return this->y;												      }
@@ -53,6 +55,7 @@ class Entity : public Element
 		float      	 getSpeed()	          { return this->speed;												  }
 		float      	 getXRate()           { return this->xRate;												  }
 		float      	 getYRate()           { return this->yRate;												  }
+		int			 getANIMATIONMULTIPL(){ return ANIMATIONMULTIPL;										  }
 		bool		 inClickBox(int x, int y);
 		short      	 getAnimationID()     { return this->animationID;										  }
 		bool  	     isAlive()		      { return this->alive;											      }
@@ -61,18 +64,13 @@ class Entity : public Element
 		bool      	 isAAActive()	      { return this->aaActive;											  }
 		bool		 getCancelAA()        { return cancelAA;												  }
 		SDL_Texture* getPortraitTexture() { return textPortrait;											  }
-		SDL_Texture* getTexture()		  { return text[animationID][dir][step];							  }
+		SDL_Texture* getTexture()		  { return text[animationID][dir][step / ANIMATIONMULTIPL];							  }
 
+		void increaseX() { this->x++; this->pos.x = x; }
 		void		 updateMovebox()				 { xMovebox = x + 125; yMovebox = y + 185;				  }
 		void		 updateClickBox()				 { clickBox.x = pos.x + 90; clickBox.y = pos.y + 65;	  }
-		void		 setX(float x)					 { this->x = x;											  }
-		void		 setY(float y)					 { this->y = y;											  }
-		void		 increaseX()					 { this->x++;											  }
-		void		 increaseY()					 { this->y++;											  }
-		void		 increaseX(float x)				 { this->x += x; this->pos.x = this->x;					  }
-		void		 increaseY(float y)				 { this->y += y; this->pos.y = this->y;					  }
-		void		 setPosX(int x)					 { this->pos.x = x;										  }
-		void		 setPosY(int y)					 { this->pos.y = y;										  }
+		void		 addX(float x)				     { this->x += x; this->pos.x = this->x;					  }
+		void		 addY(float y)				     { this->y += y; this->pos.y = this->y;					  }
 		void		 addXOffset(int xOffset)		 { this->xOffset += xOffset;							  }
 		void		 addYOffset(int yOffset)		 { this->yOffset += yOffset;							  }
 		void		 setStep(short step)			 { this->step = step;									  }
