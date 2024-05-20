@@ -36,7 +36,7 @@ class Entity : public Element
 
 		virtual void draw(SDL_Renderer* renderer) = 0;
 
-		void move(vector<Element*>& v_elements, Map& m, bool& cameraLock, float& deltaTime);
+		void move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime);
 
 		Spell* getSpell(int i)			  { return spells[i];												  }
 		Pseudo		 getPseudo()          { return this->pseudo;											  }
@@ -88,7 +88,7 @@ class Entity : public Element
 		bool up = false, right = false, down = false, left = false;
 
 
-		bool isInClickRange(int x, int y) { return (abs(this->xMovebox - x) + abs(this->yMovebox - y)) < 75; }
+		bool isInClickRange(int x, int y) { return (abs(this->xMovebox - x) + abs(this->yMovebox - y)) < 100; }
 		bool isInFront(int x, int y) override;
 		bool check_collisions(int x, int y) override;
 

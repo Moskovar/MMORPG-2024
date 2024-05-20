@@ -25,7 +25,7 @@ AutoAttack::AutoAttack(SDL_Renderer* renderer) : Spell("Auto attack")
     }
 }
 
-void AutoAttack::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& cameraLock, mutex* mtx)
+void AutoAttack::run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& e, Map* m, bool& cameraLock, mutex* mtx)
 {
     e.setAnimationID(this->animationID);
     e.setAAActive(true);

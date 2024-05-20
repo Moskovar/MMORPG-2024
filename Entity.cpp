@@ -93,7 +93,7 @@ Entity::~Entity()
     std::cout << "Entity: " << pseudo.getFont().getText() << " cleared !" << std::endl;
 }
 
-void Entity::move(vector<Element*>& v_elements, Map& m, bool& cameraLock, float& deltaTime)
+void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime)
 {
     float xChange = speed * xRate * deltaTime,
           yChange = speed * yRate * deltaTime;
@@ -102,7 +102,7 @@ void Entity::move(vector<Element*>& v_elements, Map& m, bool& cameraLock, float&
 
     bool collision = false;
 
-    for (Element* b : v_elements) if (b->check_collisions(xMovebox + xChange, yMovebox + yChange)) { collision = true; break; }
+    for (Element* b : v_elements_solid) if (b->check_collisions(xMovebox + xChange, yMovebox + yChange)) { collision = true; break; }
     if (!collision)
     {
         for (unsigned int i = 0; i < v_elements.size(); i++)

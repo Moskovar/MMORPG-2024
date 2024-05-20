@@ -23,7 +23,7 @@ Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
     }
 }
 
-void Whirlwind::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& cameraLock, mutex* mtx)
+void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& e, Map* m, bool& cameraLock, mutex* mtx)
 {
     Uint32 lastTime = SDL_GetTicks64();
     Uint32 currentTime;
@@ -43,7 +43,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& camer
               yChange = e.getSpeed() * uti::pixDir[e.getDir()].yRate * deltaTime;
         
         bool collision = false;
-        for (Element* b : v_elements) if (b->check_collisions(e.getXMovebox() + xChange, e.getYMovebox() + yChange)) { collision = true; break; }
+        for (Element* b : v_elements_solid) if (b->check_collisions(e.getXMovebox() + xChange, e.getYMovebox() + yChange)) { collision = true; break; }
         if (!collision)
         {
             for (unsigned int i = 0; i < v_elements.size(); i++)
@@ -52,7 +52,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& camer
                 v_elements[i]->addYOffset(-yChange);
             }
 
-            m.addOffset(-xChange, -yChange);
+            m->addOffset(-xChange, -yChange);
 
             if (!cameraLock)
             {
@@ -65,7 +65,7 @@ void Whirlwind::run(vector<Element*>& v_elements, Entity& e, Map& m, bool& camer
             else
             {
                 for (Element* e : v_elements) e->resetPos();//applique le offset aux elements du décors
-                m.resetPos();
+                m->resetPos();
             }
 
             e.addXMap(xChange);

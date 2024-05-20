@@ -30,12 +30,9 @@ namespace uti {
 		float xRate, yRate;
 	};
 	
-	inline bool loadTexture(SDL_Texture* text, SDL_Surface* img, SDL_Renderer* renderer, string errMsg)
-	{
-		if (img) { text = SDL_CreateTextureFromSurface(renderer, img); }
-		else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, std::string("Failed to load image: " + errMsg).c_str()); exit(0); }
-	}
-
 	extern map<int, map<int, string>> categories;
 	extern map<float, MoveRate> pixDir;
+
+	Uint32 get_pixel(SDL_Surface* surface, int x, int y);
+
 }
