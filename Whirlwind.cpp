@@ -23,14 +23,14 @@ Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
     }
 }
 
-void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& e, Map* m, bool& cameraLock, mutex* mtx)
+void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& self, Entity* enemy, Map* m, bool& cameraLock, mutex* mtx)
 {
     Uint32 lastTime = SDL_GetTicks64();
     Uint32 currentTime;
     float deltaTime;
-    e.setSpellActive(true);
-    e.setAnimationID(animationID);
-    e.setStep(0);
+    self.setSpellActive(true);
+    self.setAnimationID(animationID);
+    self.setStep(0);
     int step = 0;
     for (int i = 0; i < 100; i++)
     {   
@@ -38,12 +38,16 @@ void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_so
         deltaTime = (currentTime - lastTime) / 1000.0f; // Convert to seconds
         lastTime = currentTime;
         mtx->lock();
-        e.setStep((i % 20) * e.getANIMATIONMULTIPL());
-        float xChange = e.getSpeed() * uti::pixDir[e.getDir()].xRate * deltaTime,
-              yChange = e.getSpeed() * uti::pixDir[e.getDir()].yRate * deltaTime;
+        self.setStep((i % 20) * self.getANIMATIONMULTIPL());
+
+        float xChange = self.getSpeed() * uti::pixDir[self.getDir()].xRate * deltaTime,
+              yChange = self.getSpeed() * uti::pixDir[self.getDir()].yRate * deltaTime;
+
+        self.setXChange(xChange);
+        self.setYChange(yChange);
         
         bool collision = false;
-        for (Element* b : v_elements_solid) if (b->check_collisions(e.getXMovebox() + xChange, e.getYMovebox() + yChange)) { collision = true; break; }
+        for (Element* b : v_elements_solid) if (b->check_collisions(self.getXMovebox() + xChange, self.getYMovebox() + yChange)) { collision = true; break; }
         if (!collision)
         {
             for (unsigned int i = 0; i < v_elements.size(); i++)
@@ -56,11 +60,11 @@ void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_so
 
             if (!cameraLock)
             {
-                e.addX(xChange);
-                e.addY(yChange);
+                self.addX(xChange);
+                self.addY(yChange);
 
-                e.addXOffset(-xChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
-                e.addYOffset(-yChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
+                self.addXOffset(-xChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
+                self.addYOffset(-yChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
             }
             else
             {
@@ -68,17 +72,17 @@ void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_so
                 m->resetPos();
             }
 
-            e.addXMap(xChange);
-            e.addYMap(yChange);
+            self.addXMap(xChange);
+            self.addYMap(yChange);
         }
-        e.updateMovebox();
-        e.updateClickBox();
+        self.updateMovebox();
+        self.updateClickBox();
         mtx->unlock();
         Sleep(5);
     }
-    if (e.isMoving()) e.setAnimationID(1);
-    else          e.setAnimationID(0);
-    e.setStep(0);
-    e.setSpellActive(false);
-    e.setCancelAA(false);
+    if (self.isMoving()) self.setAnimationID(1);
+    else          self.setAnimationID(0);
+    self.setStep(0);
+    self.setSpellActive(false);
+    self.setCancelAA(false);
 }

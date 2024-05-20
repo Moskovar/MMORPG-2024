@@ -25,22 +25,22 @@ AutoAttack::AutoAttack(SDL_Renderer* renderer) : Spell("Auto attack")
     }
 }
 
-void AutoAttack::run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& e, Map* m, bool& cameraLock, mutex* mtx)
+void AutoAttack::run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& self, Entity* enemy, Map* m, bool& cameraLock, mutex* mtx)
 {
-    e.setAnimationID(this->animationID);
-    e.setAAActive(true);
+    self.setAnimationID(this->animationID);
+    self.setAAActive(true);
     for (int i = 0; i < 17; i++)
     {
         for(int p = 0; p < 25; p++)
         {
-            if (e.getCancelAA()) { e.setAAActive(false); return; }
+            if (self.getCancelAA()) { self.setAAActive(false); return; }
             Sleep(1);
         }
         //cout << e.step << endl;
-        e.setStep((i % 21) * e.getANIMATIONMULTIPL());
-        if ((e.getDir() == 0 || e.getDir() == 2) && i == 16) break; else e.increaseStep();
+        self.setStep((i % 21) * self.getANIMATIONMULTIPL());
+        if ((self.getDir() == 0 || self.getDir() == 2) && i == 16) break; else self.increaseStep();
     }
-    if (e.isMoving()) e.setAnimationID(1);
-    else              e.setAnimationID(0);
-    e.setStep(0);
+    if (self.isMoving()) self.setAnimationID(1);
+    else              self.setAnimationID(0);
+    self.setStep(0);
 }

@@ -64,7 +64,10 @@ class Entity : public Element
 		bool      	 isAAActive()	      { return this->aaActive;											  }
 		bool		 getCancelAA()        { return cancelAA;												  }
 		SDL_Texture* getPortraitTexture() { return textPortrait;											  }
-		SDL_Texture* getTexture()		  { return text[animationID][dir][step / ANIMATIONMULTIPL];							  }
+		SDL_Texture* getTexture()		  { return text[animationID][dir][step / ANIMATIONMULTIPL];			  }
+		float getDeltaTime() { return this->deltaTime; } //pour debug
+		float getXChange() { return this->xChange; }
+		float getYChange() { return this->yChange; }
 
 		void increaseX() { this->x++; this->pos.x = x; }
 		void		 updateMovebox()				 { xMovebox = x + 125; yMovebox = y + 185;				  }
@@ -82,7 +85,8 @@ class Entity : public Element
 		void		 setCancelAA(bool state)		 { this->cancelAA = state;								  }
 		void		 setAnimationID(int animationID) { this->animationID = animationID;						  }
 		void		 setSpellActive(bool state)      { this->spellActive = state;							  }
-		
+		void setXChange(float xChange)				 { this->xChange = xChange;								  }
+		void setYChange(float yChange)				 { this->yChange = yChange;								  }
 
 		short countDir;
 		bool up = false, right = false, down = false, left = false;
@@ -96,6 +100,9 @@ class Entity : public Element
 		Pseudo pseudo;
 		SDL_Surface* imgPortrait  = nullptr;
 		SDL_Texture* textPortrait = nullptr;
+
+		float deltaTime = 0;//a delete pour debug avec la position anticipée
+		float xChange = 0, yChange = 0;
 
 		short category, step, xMovebox, yMovebox;
 		float dir, xRate, yRate, speed;

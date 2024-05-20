@@ -95,14 +95,15 @@ Entity::~Entity()
 
 void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime)
 {
-    float xChange = speed * xRate * deltaTime,
-          yChange = speed * yRate * deltaTime;
+    xChange = speed * xRate * deltaTime,
+    yChange = speed * yRate * deltaTime;
 
+    this->deltaTime = deltaTime;
     updateMapPos(xChange, yChange);//pq ne pas juste changer l'offset si camera pas lock et changer le X si caméra lock ?? ça evite un double parcourt des maps pour le resetpos
 
     bool collision = false;
 
-    for (Element* b : v_elements_solid) if (b->check_collisions(xMovebox + xChange, yMovebox + yChange)) { collision = true; break; }
+    for (Element* b : v_elements_solid) if (b->check_collisions(xMovebox + 5 * xChange, yMovebox + 5 * yChange)) { collision = true; break; }
     if (!collision)
     {
         for (unsigned int i = 0; i < v_elements.size(); i++)
@@ -127,6 +128,8 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
             m.resetPos();
         }
     }
+
+    this->deltaTime = 0;
 
     updateMovebox();
     updateClickBox();
@@ -157,7 +160,7 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
         if (step < 11 * ANIMATIONMULTIPL) step++;
         else                                step = 0;
 
-    if (!moving) step = 0;
+    if (!moving) { step = 0; this->xChange = 0; this->yChange = 0; }
 }
 
 bool Entity::inClickBox(int x, int y)

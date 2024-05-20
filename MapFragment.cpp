@@ -38,14 +38,29 @@ bool MapFragment::check_collisions(int x, int y)
 
 	if (x < this->pos.x || x > this->pos.x + imgBg->w - 1 || y < this->pos.y || y > this->pos.y + imgBg->h - 1) return false;// check table de vérité ?
 
+	int count = 0;
 	Uint32 pixel_color = uti::get_pixel(imgBg, x - pos.x, y - pos.y); // - pos.x / - pos.y pour ???
 	Uint8 red, green, blue, alpha;
 	SDL_GetRGBA(pixel_color, imgBg->format, &red, &green, &blue, &alpha);
-	printf("Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d\n", x, y, red, green, blue, alpha);
-	if (red == 255 && green == 0 && blue == 0) return true;
+	if (red == 255 && green == 0 && blue == 0) count++;
 
+	pixel_color = uti::get_pixel(imgBg, x - pos.x + 10, y - pos.y); // - pos.x / - pos.y pour ???
+	SDL_GetRGBA(pixel_color, imgBg->format, &red, &green, &blue, &alpha);
+	if (red == 255 && green == 0 && blue == 0) count++;
 
-	return false;
+	pixel_color = uti::get_pixel(imgBg, x - pos.x - 10, y - pos.y); // - pos.x / - pos.y pour ???
+	SDL_GetRGBA(pixel_color, imgBg->format, &red, &green, &blue, &alpha);
+	if (red == 255 && green == 0 && blue == 0) count++;
+
+	pixel_color = uti::get_pixel(imgBg, x - pos.x, y - pos.y + 10); // - pos.x / - pos.y pour ???
+	SDL_GetRGBA(pixel_color, imgBg->format, &red, &green, &blue, &alpha);
+	if (red == 255 && green == 0 && blue == 0) count++;
+
+	pixel_color = uti::get_pixel(imgBg, x - pos.x, y - pos.y - 10); // - pos.x / - pos.y pour ???
+	SDL_GetRGBA(pixel_color, imgBg->format, &red, &green, &blue, &alpha);
+	if (red == 255 && green == 0 && blue == 0) count++;
+
+	return (count > 3) ? true : false;
 }
 
 void MapFragment::resetPos()
