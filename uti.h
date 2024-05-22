@@ -26,8 +26,12 @@ namespace uti {
 		LEFT  = 11
 	};
 
-	struct MoveRate {
+	struct MoveRate {//utile ??
 		float xRate, yRate;
+	};
+
+	struct NetworkEntity {
+		int id = 0, x = 0, y = 0;
 	};
 	
 	extern map<int, map<int, string>> categories;

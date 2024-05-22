@@ -6,7 +6,7 @@ class NPC : public Entity
 {
 	public:
 		NPC() {}
-		NPC(std::string name, float x, float y, int category, string className, bool isSolid, SDL_Renderer* renderer);
+		NPC(std::string name, float x, float y, int id, int category, string className, bool isSolid, SDL_Renderer* renderer);
 
 		Quest* getPQuest() { return &this->quest; }
 

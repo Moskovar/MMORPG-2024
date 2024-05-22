@@ -26,8 +26,8 @@ public:
 	float getY()	   { return y;		 }
 	float getXOffset() { return xOffset; }
 	float getYOffset() { return yOffset; }
-	int   getXMap()    { return xMap;    }
-	int   getYMap()    { return yMap;    }
+	float getXMap()    { return xMap;    }
+	float getYMap()    { return yMap;    }
 
 	void setXYMap(int x, int y) { this->xMap = x;	this->yMap = y; }
 	void setX(float x) { this->x = x; pos.x = x; }
@@ -37,13 +37,13 @@ public:
 	void addX(float x) { this->x += x; pos.x = this->x; }
 	void addY(float y) { this->y += y; pos.y = this->y; }
 	void resetPos(float xOffset, float yOffset) { addXOffset(x); addYOffset(y); resetPos(); }
-	void updateMapPos(int x, int y) { this->xMap += x;	this->yMap += y; }
+	void updateMapPos(float x, float y) { this->xMap += x;	this->yMap += y; }
 
 
 protected:
 	SDL_Rect pos{ 0, 0, 0, 0};
 	bool isSolid = false;
-	int xMap = 0, yMap = 0;//position sur la map
+	float xMap = 0, yMap = 0;//position sur la map
 	float x = 0, y = 0, xOffset = 0, yOffset = 0;//position sur l'écran et offset par rapport à la caméra
 
 };

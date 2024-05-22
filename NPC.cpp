@@ -1,7 +1,7 @@
 #include "NPC.h"
 #include "UI.h"
 
-NPC::NPC(std::string name, float x, float y, int category, string className, bool isSolid, SDL_Renderer* renderer) : Entity(name, x, y, category, className, renderer)
+NPC::NPC(std::string name, float x, float y, int id, int category, string className, bool isSolid, SDL_Renderer* renderer) : Entity(name, x, y, id, category, className, renderer)
 {
 	clickBox.x = x + 90;
 	clickBox.y = y + 65;

@@ -23,7 +23,7 @@ class Entity : public Element
 {
 	public:
 		Entity() {}
-		Entity(std::string name, float x, float y, int category, string src, SDL_Renderer* renderer);
+		Entity(std::string name, float x, float y, int id, int category, string src, SDL_Renderer* renderer);
 		~Entity();
 
 		static enum TYPE {
@@ -104,6 +104,7 @@ class Entity : public Element
 		float deltaTime = 0;//a delete pour debug avec la position anticipée
 		float xChange = 0, yChange = 0;
 
+		int id = -1;
 		short category, step, xMovebox, yMovebox;
 		float dir, xRate, yRate, speed;
 		bool alive, moving, spellActive, aaActive, cancelAA;

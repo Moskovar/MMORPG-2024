@@ -1,4 +1,5 @@
 #pragma once
+#include "Connection.h"
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -21,6 +22,8 @@
 #include "Font.h"
 
 using namespace std;
+
+Connection co;
 
 mutex mtx;
 
@@ -55,6 +58,7 @@ void handleLeftClick(SDL_Event& events , thread& t_screenMsg);
 void handleRightClick(SDL_Event& events, thread& t_screenMsg);
 void resetAllElementsPos();
 void t_run_handleKeyEvents();
+void t_receive_data_udp();
 const int FPS = 60;
 const int FRAME_TIME = 1000 / FPS;
 int main(int argc, char* argv[])
@@ -94,23 +98,27 @@ int main(int argc, char* argv[])
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, loading_screen_texture, NULL, &loading_screen_pos);
     SDL_RenderPresent(renderer);
-    
-    int posx = 1920 + 800, posy = 1080 + 500, rowMap = posy / 1080, colMap = posx / 1920, xOffset = width / 2 - 125 - (posx % 1920), yOffset = height / 2 - 125 - (posy % 1080);
-    c = new Warrior("Titus", posx % 1920, posy % 1080, uti::Category::PLAYER, renderer);
+
+    uti::NetworkEntity ne;
+    co.recvNETCP(ne);
+    cout << ne.id << " : " << ne.x << " : " << ne.y << endl;
+        
+    int posx = ne.x, posy = ne.y, rowMap = posy / 1080, colMap = posx / 1920, xOffset = width / 2 - 125 - (posx % 1920), yOffset = height / 2 - 125 - (posy % 1080);
+    c = new Warrior("Titus", posx % 1920, posy % 1080, ne.id, uti::Category::PLAYER, renderer);
     c->setXYMap(posx, posy);
-    NPC npc("DENT", 900, 300, uti::Category::NPC, "character/warrior", false, renderer);
+    NPC npc("DENT", 2800, 1450, -1, uti::Category::NPC, "character/warrior", false, renderer);
     ui = new UI(window, renderer, c);
     
     //qb.addQuest(new Quest("First quest", "First quest in the world", 100, window, renderer));
     v_elements[0].push_back(dynamic_cast<Element*>(c));
     v_elements[1].push_back(dynamic_cast<Element*>(&npc));
 
-    /*for (Element* e : v_elements[1])
+    for (Element* e : v_elements[1])
     {
         e->addXOffset(xOffset - colMap * 1920);
         e->addYOffset(yOffset - rowMap * 1080);
         e->resetPos();
-    }*/
+    }
 
     //--- Personnage au milieu de l'écran ---//
     c->addXOffset(xOffset);
@@ -177,6 +185,7 @@ int main(int argc, char* argv[])
     thread t_aa;
     thread t_screenMsg;
     thread t_camera(t_update_camera);
+    thread t_listen_udp;// (t_receive_data_udp);
     
     SDL_RenderClear(renderer);
     SDL_SetWindowSize(window, width, height);
@@ -297,6 +306,7 @@ int main(int argc, char* argv[])
     if(t_aa.joinable())      t_aa.join();
     if (t_camera.joinable()) t_camera.join();
     if (t_screenMsg.joinable()) t_screenMsg.join();
+    if (t_listen_udp.joinable()) t_listen_udp.join();
     //if (t_handleKeyEvents.joinable()) t_handleKeyEvents.join();
 
     SDL_FreeSurface(loading_screen_img);
@@ -365,6 +375,7 @@ void t_move_player()
     Uint32 lastTime = SDL_GetTicks64();
     Uint32 currentTime;
     float deltaTime;
+    uti::NetworkEntity ne = { 0, 0, 0 };
     
     while (c->isAlive())
     {
@@ -373,6 +384,10 @@ void t_move_player()
         lastTime = currentTime;
         //cout << v_elements_solid.size() << endl;
         if (c->isMoving() && !c->isSpellActive()) { mtx.lock(); c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime); mtx.unlock(); }
+        cout << c->getXMap() << " : " << c->getYMap() << endl;
+        ne.x = c->getXMap() * 100;
+        ne.y = c->getYMap() * 100;
+        co.sendStructUDP(ne);
         SDL_Delay(1);
     }
 }
@@ -396,6 +411,16 @@ void t_run_aa(AutoAttack* spell, Entity* enemy)
         }
     }
     c->setAAActive(false);
+}
+
+void t_receive_data_udp()
+{
+    uti::NetworkEntity ne;
+    while (run)
+    {
+        co.recvNEUDP(ne);
+        std::cout << "ID: " << ne.id << ", X: " << ne.x << ", Y: " << ne.y << std::endl;
+    }
 }
 
 void t_run_screenMsg()
