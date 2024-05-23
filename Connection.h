@@ -18,7 +18,8 @@ class Connection
 		~Connection();
 
 		void sendTCP(string data);
-		void sendStructUDP(uti::NetworkEntity& ne);
+		void sendTCP(short data);
+		void sendNEUDP(uti::NetworkEntity& ne);
 		void recvNETCP(uti::NetworkEntity& ne);
 		void recvNEUDP(uti::NetworkEntity& ne);
 		void close();

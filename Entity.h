@@ -88,6 +88,8 @@ class Entity : public Element
 		void setXChange(float xChange)				 { this->xChange = xChange;								  }
 		void setYChange(float yChange)				 { this->yChange = yChange;								  }
 
+		void setPos(float x, float y);
+
 		short countDir;
 		bool up = false, right = false, down = false, left = false;
 

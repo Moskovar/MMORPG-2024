@@ -66,17 +66,14 @@ Connection::Connection()//gérer les erreurs avec des exceptions
         exit(1);
     }
 
-    //socklen_t len = sizeof(serverAddr);
-    //// Recevoir le message
-    //int n = recvfrom(udpSocket, recvbuf, sizeof(recvbuf), 0, (struct sockaddr*)&serverAddr, &len);
-    //if (n < 0) {
-    //    perror("recvfrom failed");
-    //    exit(EXIT_FAILURE);
-    //}
-    //recvbuf[n] = '\0';
+    // Lier la socket à l'adresse du serveur
+    if (bind(udpSocket, (const struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
 
-    //// Afficher le message reçu
-    //std::cout << "Message from server: " << recvbuf << std::endl;
+    u_long mode = 1;
+    ioctlsocket(udpSocket, FIONBIO, &mode);
 }
 
 Connection::~Connection()
@@ -95,7 +92,19 @@ void Connection::sendTCP(string data)
     //std::cout << "Bytes Sent: " << iResult << std::endl;
 }
 
-void Connection::sendStructUDP(uti::NetworkEntity& ne)
+void Connection::sendTCP(short data)
+{
+    data = htons(data);
+    int iResult = ::send(tcpSocket, (const char*)&data, sizeof(data), 0);
+    if (iResult == SOCKET_ERROR) {
+        std::cerr << "send failed: " << WSAGetLastError() << std::endl;
+        //closesocket(tcpSocket);
+        //WSACleanup();
+    }
+    //std::cout << "Bytes Sent: " << iResult << std::endl;
+}
+
+void Connection::sendNEUDP(uti::NetworkEntity& ne)
 {
     ne.id = htonl(ne.id);
     ne.x = htonl(ne.x);
@@ -110,35 +119,14 @@ void Connection::sendStructUDP(uti::NetworkEntity& ne)
     }
 }
 
-//void Connection::sendUDP(const char* sendbuf)
-//{
-//    // Envoi de données au serveur
-//    int bytesSent = sendto(udpSocket, sendbuf, strlen(sendbuf), 0, (const sockaddr*)&serverAddr, sizeof(serverAddr));
-//    if (bytesSent == SOCKET_ERROR) {
-//        std::cerr << "Erreur lors de l'envoi des donnees au serveur." << std::endl;
-//        closesocket(udpSocket);
-//        WSACleanup();
-//    }
-//}
-
 void Connection::recvNETCP(uti::NetworkEntity& ne)
 {
     uti::NetworkEntity ne2;
     recv(tcpSocket, reinterpret_cast<char*>(&ne2), sizeof(ne2), 0);
 
     ne.id = ntohl(ne2.id);
-    ne.x  = ntohs(ne2.x);
-    ne.y  = ntohs(ne2.y);
-
-    /*while ((iResult = recv(tcpSocket, recvbuf, recvbuflen - 1, 0)) > 0)
-    {
-        if (iResult > 0) {
-            std::cout << "Bytes received: " << iResult << std::endl;
-            std::cout << "Message: " << (data = string(recvbuf, iResult)) << std::endl;
-        }
-        else if (iResult == 0) close();
-        else                   std::cerr << "recv failed: " << WSAGetLastError() << std::endl;
-    }*/
+    ne.x  = ntohl(ne2.x);
+    ne.y  = ntohl(ne2.y);
 }
 
 void Connection::close()
@@ -151,11 +139,37 @@ void Connection::close()
 
 void Connection::recvNEUDP(uti::NetworkEntity& ne)
 {
+    sockaddr_in serverAddr;
+    int serverAddrLen = sizeof(serverAddr);
+
     uti::NetworkEntity ne2;
-    int addrlen = sizeof(serverAddr);
-    // Réception des données
-    recvfrom(udpSocket, reinterpret_cast<char*>(&ne2), sizeof(ne2), 0, (struct sockaddr*)&serverAddr, &addrlen);
-    ne.id = htonl(ne.id);
-    ne.x  = htonl(ne.x);
-    ne.y  = htonl(ne.y);
+
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(udpSocket, &readfds);
+
+    // Configurer le timeout
+    timeval timeout;
+    timeout.tv_sec = 1; // Attendez 1 seconde
+    timeout.tv_usec = 0;
+
+    // Appeler select
+    int result = select(0, &readfds, NULL, NULL, &timeout);
+    if (result == SOCKET_ERROR) std::cerr << "Erreur lors de l'appel de select." << std::endl;
+    else if (result == 0) std::cout << "Delai d'attente ecoule." << std::endl;//no data available
+    else {
+        // Des données sont disponibles sur le socket
+        if (FD_ISSET(udpSocket, &readfds)) {
+            int bytesReceived = recvfrom(udpSocket, (char*)&ne2, sizeof(ne2), 0, (sockaddr*)&serverAddr, &serverAddrLen);
+            if (bytesReceived == SOCKET_ERROR) {
+                std::cerr << "Erreur lors de la reception des donnees: " << WSAGetLastError() << std::endl;
+            }
+        }
+    }
+
+    ne.id = htonl(ne2.id);
+    ne.x  = htonl(ne2.x);
+    ne.y  = htonl(ne2.y);
+
+    std::cout << "ID: " << ne.id << ", X: " << ne.x / 100 << ", Y: " << ne.y / 100<< std::endl;
 }

@@ -103,8 +103,9 @@ int main(int argc, char* argv[])
     co.recvNETCP(ne);
     cout << ne.id << " : " << ne.x << " : " << ne.y << endl;
         
-    int posx = ne.x, posy = ne.y, rowMap = posy / 1080, colMap = posx / 1920, xOffset = width / 2 - 125 - (posx % 1920), yOffset = height / 2 - 125 - (posy % 1080);
-    c = new Warrior("Titus", posx % 1920, posy % 1080, ne.id, uti::Category::PLAYER, renderer);
+    float posx = ne.x / 100, posy = ne.y / 100;
+    int rowMap = posy / 1080, colMap = posx / 1920, xOffset = width / 2 - 125 - ((int)posx % 1920), yOffset = height / 2 - 125 - ((int)posy % 1080);
+    c = new Warrior("Titus", (int)posx % 1920, (int)posy % 1080, ne.id, uti::Category::PLAYER, renderer);
     c->setXYMap(posx, posy);
     NPC npc("DENT", 2800, 1450, -1, uti::Category::NPC, "character/warrior", false, renderer);
     ui = new UI(window, renderer, c);
@@ -185,7 +186,7 @@ int main(int argc, char* argv[])
     thread t_aa;
     thread t_screenMsg;
     thread t_camera(t_update_camera);
-    thread t_listen_udp;// (t_receive_data_udp);
+    thread t_listen_udp(t_receive_data_udp);
     
     SDL_RenderClear(renderer);
     SDL_SetWindowSize(window, width, height);
@@ -215,10 +216,10 @@ int main(int argc, char* argv[])
                 case SDL_WINDOWEVENT: if (events.window.event == SDL_WINDOWEVENT_CLOSE) run = SDL_FALSE; break;
                 case SDL_KEYDOWN: // Un événement de type touche enfoncée est effectué
                     //--- Déplacements ---//
-                    if (events.key.keysym.sym == SDLK_z) { if (!c->up)    c->countDir += uti::Direction::UP;    c->up = true;    c->update(); }
-                    if (events.key.keysym.sym == SDLK_d) { if (!c->right) c->countDir += uti::Direction::RIGHT; c->right = true; c->update(); }
-                    if (events.key.keysym.sym == SDLK_s) { if (!c->down)  c->countDir += uti::Direction::DOWN;  c->down = true;  c->update(); }
-                    if (events.key.keysym.sym == SDLK_q) { if (!c->left)  c->countDir += uti::Direction::LEFT;  c->left = true;  c->update(); }
+                    if (events.key.keysym.sym == SDLK_z) { if (!c->up) { c->countDir += uti::Direction::UP;    c->up = true;    c->update(); co.sendTCP(c->getCountDir()); } }
+                    if (events.key.keysym.sym == SDLK_d) { if (!c->right) { c->countDir += uti::Direction::RIGHT; c->right = true; c->update(); co.sendTCP(c->getCountDir()); } }
+                    if (events.key.keysym.sym == SDLK_s) { if (!c->down)  { c->countDir += uti::Direction::DOWN;  c->down = true;  c->update(); co.sendTCP(c->getCountDir()); } }
+                    if (events.key.keysym.sym == SDLK_q) { if (!c->left)  { c->countDir += uti::Direction::LEFT;  c->left = true;  c->update(); co.sendTCP(c->getCountDir()); } }
                     //--- Spells ---//
                     if (events.key.keysym.sym == SDLK_a) { if (!c->isSpellActive()) { c->setCancelAA(true); if (!c->isSpellActive()) { if (t_spell.joinable()) t_spell.join(); t_spell = thread(t_run_spell, c->getSpell(1), nullptr); } } }
                     if (events.key.keysym.sym == SDLK_e) { if (!c->isSpellActive()) { if (!c->isAAActive()) { if (t_aa.joinable()) t_aa.join(); t_aa = thread(t_run_aa, dynamic_cast<AutoAttack*>(c->getSpell(0)), nullptr); } } }
@@ -229,10 +230,10 @@ int main(int argc, char* argv[])
                     break;
                 case SDL_KEYUP: // Un événement de type touche relâchée est effectué                
                     if (events.key.keysym.sym == SDLK_ESCAPE) { run = SDL_FALSE; c->setAlive(false); c->setCancelAA(true); }
-                    if (events.key.keysym.sym == SDLK_z) { if (c->up)    c->countDir -= uti::Direction::UP;     c->up = false;    c->update(); }
-                    if (events.key.keysym.sym == SDLK_d) { if (c->right) c->countDir -= uti::Direction::RIGHT;  c->right = false; c->update(); }
-                    if (events.key.keysym.sym == SDLK_q) { if (c->left)  c->countDir -= uti::Direction::LEFT;   c->left = false;  c->update(); }
-                    if (events.key.keysym.sym == SDLK_s) { if (c->down)  c->countDir -= uti::Direction::DOWN;   c->down = false;  c->update(); }
+                    if (events.key.keysym.sym == SDLK_z) { if (c->up)    c->countDir -= uti::Direction::UP;     c->up = false;    c->update(); co.sendTCP(c->getCountDir()); }
+                    if (events.key.keysym.sym == SDLK_d) { if (c->right) c->countDir -= uti::Direction::RIGHT;  c->right = false; c->update(); co.sendTCP(c->getCountDir()); }
+                    if (events.key.keysym.sym == SDLK_q) { if (c->left)  c->countDir -= uti::Direction::LEFT;   c->left = false;  c->update(); co.sendTCP(c->getCountDir()); }
+                    if (events.key.keysym.sym == SDLK_s) { if (c->down)  c->countDir -= uti::Direction::DOWN;   c->down = false;  c->update(); co.sendTCP(c->getCountDir()); }
                     if (events.key.keysym.sym == SDLK_SPACE) cameraLock = false;
 
                     //--- UI SHORTCUTS ---//
@@ -307,7 +308,6 @@ int main(int argc, char* argv[])
     if (t_camera.joinable()) t_camera.join();
     if (t_screenMsg.joinable()) t_screenMsg.join();
     if (t_listen_udp.joinable()) t_listen_udp.join();
-    //if (t_handleKeyEvents.joinable()) t_handleKeyEvents.join();
 
     SDL_FreeSurface(loading_screen_img);
     SDL_DestroyTexture(loading_screen_texture);
@@ -384,10 +384,10 @@ void t_move_player()
         lastTime = currentTime;
         //cout << v_elements_solid.size() << endl;
         if (c->isMoving() && !c->isSpellActive()) { mtx.lock(); c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime); mtx.unlock(); }
-        cout << c->getXMap() << " : " << c->getYMap() << endl;
+        //cout << c->getXMap() << " : " << c->getYMap() << endl;
         ne.x = c->getXMap() * 100;
         ne.y = c->getYMap() * 100;
-        co.sendStructUDP(ne);
+        //co.sendNEUDP(ne);
         SDL_Delay(1);
     }
 }
@@ -419,7 +419,9 @@ void t_receive_data_udp()
     while (run)
     {
         co.recvNEUDP(ne);
-        std::cout << "ID: " << ne.id << ", X: " << ne.x << ", Y: " << ne.y << std::endl;
+        
+        c->setX((int)(ne.x / 100) % 1920);
+        c->setY((int)(ne.y / 100) % 1080);
     }
 }
 

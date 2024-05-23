@@ -117,10 +117,10 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
 
         if (!cameraLock)
         {
-            pos.x = x += xChange;
-            xOffset -= xChange;//-= car on veut revenir en arrière en ajoutant la valeur
-            pos.y = y += yChange;
-            yOffset -= yChange;//-= car on veut revenir en arrière en ajoutant la valeur
+        //    pos.x = x += xChange;
+        //    xOffset -= xChange;//-= car on veut revenir en arrière en ajoutant la valeur
+        //    pos.y = y += yChange;
+        //    yOffset -= yChange;//-= car on veut revenir en arrière en ajoutant la valeur
         }
         else
         {
@@ -189,10 +189,17 @@ void Entity::update()
         case 18: xRate =   -1; yRate =    0; dir =   3; moving = true;            break;
         case 20: xRate =    0; yRate =    1; dir =   2; moving = true;            break;
         case 21: xRate =    0; yRate =    0;            moving = false; step = 0; break;
+        //default:
     }
 
     if      (moving == false && animationID == 1) animationID = 0;
     else if (moving == true && animationID == 0)  animationID = 1;
+}
+
+void Entity::setPos(float xMap, float yMap)
+{
+    this->xMap = xMap;
+    this->yMap = yMap;
 }
 
 bool Entity::isInFront(int x, int y)
