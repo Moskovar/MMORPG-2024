@@ -11,7 +11,7 @@ Entity::Entity(std::string name, float x, float y, int id, int category, string 
 {
     this->pseudo = Pseudo(name, renderer);
 
-    this->id = id;
+    this->ne.id    = id;
     this->category = category;
     this->step     = 0;
     this->speed    = 400;
@@ -98,15 +98,14 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
 {
     xChange = speed * xRate * deltaTime,
     yChange = speed * yRate * deltaTime;
-
-    this->deltaTime = deltaTime;
-    updateMapPos(xChange, yChange);//pq ne pas juste changer l'offset si camera pas lock et changer le X si caméra lock ?? ça evite un double parcourt des maps pour le resetpos
-
+    
     bool collision = false;
 
     for (Element* b : v_elements_solid) if (b->check_collisions(xMovebox + 5 * xChange, yMovebox + 5 * yChange)) { collision = true; break; }
     if (!collision)
     {
+        updateMapPos(xChange, yChange);//pq ne pas juste changer l'offset si camera pas lock et changer le X si caméra lock ?? ça evite un double parcourt des maps pour le resetpos
+        //cout << xMap << " : " << yMap << endl;
         for (unsigned int i = 0; i < v_elements.size(); i++)
         {
             v_elements[i]->addXOffset(-xChange);
@@ -117,10 +116,10 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
 
         if (!cameraLock)
         {
-        //    pos.x = x += xChange;
-        //    xOffset -= xChange;//-= car on veut revenir en arrière en ajoutant la valeur
-        //    pos.y = y += yChange;
-        //    yOffset -= yChange;//-= car on veut revenir en arrière en ajoutant la valeur
+            pos.x = x += xChange;
+            xOffset -= xChange;//-= car on veut revenir en arrière en ajoutant la valeur
+            pos.y = y += yChange;
+            yOffset -= yChange;//-= car on veut revenir en arrière en ajoutant la valeur
         }
         else
         {
@@ -129,8 +128,6 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
             m.resetPos();
         }
     }
-
-    this->deltaTime = 0;
 
     updateMovebox();
     updateClickBox();

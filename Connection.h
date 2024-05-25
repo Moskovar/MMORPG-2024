@@ -2,12 +2,10 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <iostream>
+#include <vector>
 #include "uti.h"
 
 #pragma comment(lib, "Ws2_32.lib")
-
-#define DEFAULT_PORT "27015"
-#define DEFAULT_BUFLEN 512
 
 using namespace std;
 
@@ -17,20 +15,20 @@ class Connection
 		Connection();
 		~Connection();
 
-		void sendTCP(string data);
-		void sendTCP(short data);
+		//bool isTCPSocketValid() { return tcpSocket != INVALID_SOCKET; }
+
+		void sendNETCP(string data);
+		void sendNETCP(uti::NetworkEntity ne);
 		void sendNEUDP(uti::NetworkEntity& ne);
-		void recvNETCP(uti::NetworkEntity& ne);
+		bool recvNETCP(uti::NetworkEntity& ne);
 		void recvNEUDP(uti::NetworkEntity& ne);
-		void close();
 
 	private:
 		WSADATA wsaData;
 
 		SOCKET tcpSocket = INVALID_SOCKET;
-		struct addrinfo* result = NULL, * ptr = NULL, hints;
-
 		SOCKET udpSocket = INVALID_SOCKET;
-		sockaddr_in serverAddr;
+		sockaddr_in tcpServerAddr, udpServerAddr;
+
 };
 

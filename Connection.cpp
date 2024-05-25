@@ -1,87 +1,67 @@
 #include "Connection.h"
+#include <chrono>
+#include <thread>
 
 Connection::Connection()//gérer les erreurs avec des exceptions
 {
-    const char* sendbuf = "this is a test";
-    char recvbuf[DEFAULT_BUFLEN];
-    int iResult;
-    int recvbuflen = DEFAULT_BUFLEN;
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
 
-    iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-    if (iResult != 0) {
-        std::cerr << "WSAStartup failed: " << iResult << std::endl;
-    }
-
-    ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-
-    iResult = getaddrinfo("localhost", DEFAULT_PORT, &hints, &result);
-    if (iResult != 0) {
-        std::cerr << "getaddrinfo failed: " << iResult << std::endl;
-        WSACleanup();
-    }
-
-    for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
-        tcpSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-        if (tcpSocket == INVALID_SOCKET) {
-            std::cerr << "Error at socket(): " << WSAGetLastError() << std::endl;
-            WSACleanup();
-            exit(1);
-        }
-
-        iResult = connect(tcpSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
-        if (iResult == SOCKET_ERROR) {
-            closesocket(tcpSocket);
-            tcpSocket = INVALID_SOCKET;
-            continue;
-        }
-        break;
-    }
-
-    freeaddrinfo(result);
-
+    //--- TCP SOCKET ---//
+    // Initialisation du socket TCP
+    tcpSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (tcpSocket == INVALID_SOCKET) {
-        std::cerr << "Unable to connect to server!" << std::endl;
+        std::cerr << "Erreur lors de la création du socket TCP." << std::endl;
         WSACleanup();
+        exit(1);
     }
 
+    //--- Définition de l'adresse du serveur TCP ---//
+    tcpServerAddr.sin_family = AF_INET;
+    tcpServerAddr.sin_port = htons(9090);
+    inet_pton(AF_INET, "127.0.0.1", &tcpServerAddr.sin_addr);
+
+    //--- Connexion au serveur TCP ---//
+    if (connect(tcpSocket, (sockaddr*)&tcpServerAddr, sizeof(tcpServerAddr)) == SOCKET_ERROR) {
+        std::cerr << "Erreur lors de la connexion au serveur TCP." << std::endl;
+        closesocket(tcpSocket);
+        WSACleanup();
+        exit(1);
+    }
+
+    cout << "Connected to distant TCP server" << endl;
 
     //--- UDP SOCKET ---//
+    // Initialisation du socket UDP
     udpSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (udpSocket == INVALID_SOCKET) {
         std::cerr << "Erreur lors de la création du socket UDP." << std::endl;
+        closesocket(tcpSocket);
         WSACleanup();
         exit(1);
     }
 
-    // Configuration de l'adresse et du port du serveur
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(8080); // Port du serveur
-    if (inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr) <= 0) { // Adresse IP du serveur
-        std::cerr << "Erreur lors de la conversion de l'adresse IP." << std::endl;
-        closesocket(udpSocket);
-        WSACleanup();
-        exit(1);
-    }
+    //--- Définition de l'adresse du serveur UDP ---//
+    udpServerAddr.sin_family = AF_INET;
+    udpServerAddr.sin_port = htons(8080);
+    inet_pton(AF_INET, "127.0.0.1", &udpServerAddr.sin_addr);
 
-    // Lier la socket à l'adresse du serveur
-    if (bind(udpSocket, (const struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
-    }
+    //--- Socket TCP et UDP mit en mode non bloquant ---//
+    u_long modeTCP = 1;
+    ioctlsocket(tcpSocket, FIONBIO, &modeTCP);
 
-    u_long mode = 1;
-    ioctlsocket(udpSocket, FIONBIO, &mode);
+    u_long modeUDP = 1;
+    ioctlsocket(udpSocket, FIONBIO, &modeUDP);
 }
 
 Connection::~Connection()
 {
-    close();
+    closesocket(tcpSocket);
+    closesocket(udpSocket);
+    WSACleanup();
 }
 
-void Connection::sendTCP(string data)
+void Connection::sendNETCP(string data)
 {
     int iResult = ::send(tcpSocket, data.c_str(), (int)strlen(data.c_str()), 0);
     if (iResult == SOCKET_ERROR) {
@@ -92,61 +72,82 @@ void Connection::sendTCP(string data)
     //std::cout << "Bytes Sent: " << iResult << std::endl;
 }
 
-void Connection::sendTCP(short data)
+void Connection::sendNETCP(uti::NetworkEntity ne)
 {
-    data = htons(data);
-    int iResult = ::send(tcpSocket, (const char*)&data, sizeof(data), 0);
+    if (tcpSocket == INVALID_SOCKET) {
+        std::cerr << "Invalid TCP socket." << std::endl;
+        return;
+    }
+    ne.id = htons(ne.id);
+    ne.countDir = htons(ne.countDir);
+    ne.x = htonl(ne.x);
+    ne.y = htonl(ne.y);
+    ne.timestamp = htonll(ne.timestamp);
+    int iResult = ::send(tcpSocket, (const char*)&ne, sizeof(ne), 0);
     if (iResult == SOCKET_ERROR) {
         std::cerr << "send failed: " << WSAGetLastError() << std::endl;
-        //closesocket(tcpSocket);
-        //WSACleanup();
     }
     //std::cout << "Bytes Sent: " << iResult << std::endl;
 }
 
 void Connection::sendNEUDP(uti::NetworkEntity& ne)
 {
-    ne.id = htonl(ne.id);
+    ne.id = htons(ne.id);
     ne.x = htonl(ne.x);
     ne.y = htonl(ne.y);
-    char buffer[sizeof(ne)];
-    memcpy(buffer, &ne, sizeof(ne));
 
     // Envoi des données sérialisées
-    int bytesSent = sendto(udpSocket, buffer, sizeof(ne), 0, (sockaddr*)&serverAddr, sizeof(serverAddr));
+    int bytesSent = sendto(udpSocket, (const char*)&ne, sizeof(ne), 0, (sockaddr*)&udpServerAddr, sizeof(udpServerAddr));
     if (bytesSent == SOCKET_ERROR) {
-        std::cerr << "Erreur lors de l'envoi des données." << std::endl;
+        std::cerr << "Erreur lors de l'envoi des donnees -> " << WSAGetLastError() << std::endl;
+    }
+    else if (bytesSent != sizeof(ne)) 
+    {
+        std::cerr << "Erreur : seuls " << bytesSent << " octets sur " << sizeof(ne) << " ont ete envoyes." << std::endl;
     }
 }
 
-void Connection::recvNETCP(uti::NetworkEntity& ne)
+bool Connection::recvNETCP(uti::NetworkEntity& ne)
 {
-    uti::NetworkEntity ne2;
-    recv(tcpSocket, reinterpret_cast<char*>(&ne2), sizeof(ne2), 0);
+    fd_set readfds;//structure pour surveiller un ensemble de descripteurs de fichiers pour lire (ici les sockets)
+    timeval timeout;
+    int bytesReceived = 0;
+    int totalReceived = 0;
+    char buffer[512];
 
-    ne.id = ntohl(ne2.id);
-    ne.x  = ntohl(ne2.x);
-    ne.y  = ntohl(ne2.y);
-}
+    while (totalReceived < sizeof(uti::NetworkEntity))
+    {
 
-void Connection::close()
-{
-    closesocket(tcpSocket);
-    closesocket(udpSocket);
-    WSACleanup();
-    cout << "Connection closed !" << endl;
+        bytesReceived = recv(tcpSocket, buffer + totalReceived, sizeof(uti::NetworkEntity) - totalReceived, 0);
+        if (bytesReceived <= 0)
+        {
+            int wsaError = WSAGetLastError();
+            if (wsaError == 10035) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); return true; }
+            cout << "Error receiving msg " << wsaError << endl;
+            // Gestion des erreurs ou de la déconnexion
+            return false;
+        }
+
+        totalReceived += bytesReceived;
+        std::memcpy(&ne, buffer, sizeof(uti::NetworkEntity));
+
+        ne.id       = ntohs(ne.id);
+        ne.countDir = ntohs(ne.countDir);
+        ne.x        = ntohl(ne.x);
+        ne.y        = ntohl(ne.y);
+        //cout << "Received: " << ne.id << " : " << ne.x << " : " << ne.y << endl;
+    }
+
+    return true;
 }
 
 void Connection::recvNEUDP(uti::NetworkEntity& ne)
 {
-    sockaddr_in serverAddr;
-    int serverAddrLen = sizeof(serverAddr);
-
     uti::NetworkEntity ne2;
-
     fd_set readfds;
     FD_ZERO(&readfds);
     FD_SET(udpSocket, &readfds);
+    int udpServerAddrLen = sizeof(udpServerAddr);
 
     // Configurer le timeout
     timeval timeout;
@@ -160,16 +161,26 @@ void Connection::recvNEUDP(uti::NetworkEntity& ne)
     else {
         // Des données sont disponibles sur le socket
         if (FD_ISSET(udpSocket, &readfds)) {
-            int bytesReceived = recvfrom(udpSocket, (char*)&ne2, sizeof(ne2), 0, (sockaddr*)&serverAddr, &serverAddrLen);
+            int bytesReceived = recvfrom(udpSocket, (char*)&ne2, sizeof(ne2), 0, (sockaddr*)&udpServerAddr, &udpServerAddrLen);
+            if (bytesReceived == SOCKET_ERROR) {
+                std::cerr << "Erreur lors de la reception des donnees: " << WSAGetLastError() << std::endl;
+            }
+            else if (bytesReceived == 0) {
+                std::cout << "Aucune donnee recue." << std::endl;
+                return;
+            }
+
+            ne.id = ntohl(ne2.id);
+            ne.x = ntohl(ne2.x);
+            ne.y = ntohl(ne2.y);
+
+            float x = (float)ne.x / 100;
+            float y = (float)ne.y / 100;
+
+            std::cout << "ID: " << ne.id << ", X: " << x << ", Y: " << y << std::endl;
             if (bytesReceived == SOCKET_ERROR) {
                 std::cerr << "Erreur lors de la reception des donnees: " << WSAGetLastError() << std::endl;
             }
         }
     }
-
-    ne.id = htonl(ne2.id);
-    ne.x  = htonl(ne2.x);
-    ne.y  = htonl(ne2.y);
-
-    std::cout << "ID: " << ne.id << ", X: " << ne.x / 100 << ", Y: " << ne.y / 100<< std::endl;
 }

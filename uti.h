@@ -1,12 +1,11 @@
 #pragma once
+#include <chrono>
 #include <SDL.h>
 #include <SDL_image.h>
-
 #include <map>
 #include <string>
 
 using namespace std;
-
 
 namespace uti {
 	enum Language {
@@ -31,11 +30,15 @@ namespace uti {
 	};
 
 	struct NetworkEntity {
-		int id = 0, x = 0, y = 0;
+		short id = 0, countDir = 0;
+		int x = 0, y = 0;
+		uint64_t timestamp; // En microsecondes depuis l'epoch
 	};
+
+	uint64_t getCurrentTimestamp();
 	
 	extern map<int, map<int, string>> categories;
-	extern map<float, MoveRate> pixDir;
+	extern map<float, MoveRate> pixDir;//useless??
 
 	Uint32 get_pixel(SDL_Surface* surface, int x, int y);
 

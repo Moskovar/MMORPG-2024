@@ -68,8 +68,10 @@ class Entity : public Element
 		float getDeltaTime() { return this->deltaTime; } //pour debug
 		float getXChange() { return this->xChange; }
 		float getYChange() { return this->yChange; }
+		uti::NetworkEntity getNE() { setNEDATA(); return ne; }
 
-		void increaseX() { this->x++; this->pos.x = x; }
+
+		void		 increaseX() { this->x++; this->pos.x = x; }
 		void		 updateMovebox()				 { xMovebox = x + 125; yMovebox = y + 185;				  }
 		void		 updateClickBox()				 { clickBox.x = pos.x + 90; clickBox.y = pos.y + 65;	  }
 		void		 addX(float x)				     { this->x += x; this->pos.x = this->x;					  }
@@ -90,6 +92,11 @@ class Entity : public Element
 
 		void setPos(float x, float y);
 
+		//--- Méthode pour la NetworkEntity ---//
+		void setNEID(short id) { ne.id = id; }
+		void setNEDATA() {
+			ne.countDir = countDir; ne.x = xMap; ne.y = yMap; ne.timestamp = uti::getCurrentTimestamp(); }
+
 		short countDir;
 		bool up = false, right = false, down = false, left = false;
 
@@ -106,7 +113,6 @@ class Entity : public Element
 		float deltaTime = 0;//a delete pour debug avec la position anticipée
 		float xChange = 0, yChange = 0;
 
-		int id = -1;
 		short category, step, xMovebox, yMovebox;
 		float dir, xRate, yRate, speed;
 		bool alive, moving, spellActive, aaActive, cancelAA;
@@ -118,4 +124,6 @@ class Entity : public Element
 		SDL_Rect clickBox;
 
 		Spell* spells[4];
+
+		uti::NetworkEntity ne;
 };

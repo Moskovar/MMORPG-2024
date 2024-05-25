@@ -26,6 +26,10 @@ namespace uti {
     {1.5,   {0.5,  0.5}},
     {2.5,  {-0.5, 0.5}},
     };
+    uint64_t getCurrentTimestamp()
+    {
+        return static_cast<uint64_t>(std::time(nullptr));
+    }
 
     Uint32 get_pixel(SDL_Surface* surface, int x, int y)
     {

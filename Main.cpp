@@ -21,6 +21,10 @@
 #include "UI.h"
 #include "Font.h"
 
+#include <io.h>
+#include <fcntl.h>
+
+
 using namespace std;
 
 Connection co;
@@ -36,8 +40,8 @@ Uint32 flags;
 float deltaTime = 0;
 
 int width = 1920, height = 1080;
-Warrior* c;
-UI* ui;
+Warrior* c = nullptr;
+UI* ui = nullptr;
 const int mfWidth = 4, mfHeight = 4;
 Map m(mfWidth, mfHeight, renderer);
 vector<vector<Element*>> v_elements = { {}, {}, {} };//0 character  1 npcs
@@ -57,12 +61,15 @@ bool compareZ(Element* e1, Element* e2);
 void handleLeftClick(SDL_Event& events , thread& t_screenMsg);
 void handleRightClick(SDL_Event& events, thread& t_screenMsg);
 void resetAllElementsPos();
-void t_run_handleKeyEvents();
 void t_receive_data_udp();
-const int FPS = 60;
-const int FRAME_TIME = 1000 / FPS;
+void t_receive_data_TCP();
+
 int main(int argc, char* argv[])
 {
+    uti::NetworkEntity ne = { -1, 0, 0, 0, 0 };
+    while(ne.id == -1) co.recvNETCP(ne);
+    //if (ne.id == -1) { cout << "Le serveur est plein" << endl; exit(1); }changer avec une fermeture prope du socket ??
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG] > %s", SDL_GetError());
@@ -99,9 +106,7 @@ int main(int argc, char* argv[])
     SDL_RenderCopy(renderer, loading_screen_texture, NULL, &loading_screen_pos);
     SDL_RenderPresent(renderer);
 
-    uti::NetworkEntity ne;
-    co.recvNETCP(ne);
-    cout << ne.id << " : " << ne.x << " : " << ne.y << endl;
+    //cout << ne.id << " : " << ne.countDir << " : " << ne.x << " : " << ne.y << " : " << ne.timestamp << endl;
         
     float posx = ne.x / 100, posy = ne.y / 100;
     int rowMap = posy / 1080, colMap = posx / 1920, xOffset = width / 2 - 125 - ((int)posx % 1920), yOffset = height / 2 - 125 - ((int)posy % 1080);
@@ -186,7 +191,8 @@ int main(int argc, char* argv[])
     thread t_aa;
     thread t_screenMsg;
     thread t_camera(t_update_camera);
-    thread t_listen_udp(t_receive_data_udp);
+    thread t_listen_tcp(t_receive_data_TCP);
+    //thread t_listen_udp(t_receive_data_udp);
     
     SDL_RenderClear(renderer);
     SDL_SetWindowSize(window, width, height);
@@ -216,24 +222,27 @@ int main(int argc, char* argv[])
                 case SDL_WINDOWEVENT: if (events.window.event == SDL_WINDOWEVENT_CLOSE) run = SDL_FALSE; break;
                 case SDL_KEYDOWN: // Un événement de type touche enfoncée est effectué
                     //--- Déplacements ---//
-                    if (events.key.keysym.sym == SDLK_z) { if (!c->up) { c->countDir += uti::Direction::UP;    c->up = true;    c->update(); co.sendTCP(c->getCountDir()); } }
-                    if (events.key.keysym.sym == SDLK_d) { if (!c->right) { c->countDir += uti::Direction::RIGHT; c->right = true; c->update(); co.sendTCP(c->getCountDir()); } }
-                    if (events.key.keysym.sym == SDLK_s) { if (!c->down)  { c->countDir += uti::Direction::DOWN;  c->down = true;  c->update(); co.sendTCP(c->getCountDir()); } }
-                    if (events.key.keysym.sym == SDLK_q) { if (!c->left)  { c->countDir += uti::Direction::LEFT;  c->left = true;  c->update(); co.sendTCP(c->getCountDir()); } }
+                    if (events.key.keysym.sym == SDLK_z) { if (!c->up)    { c->countDir += uti::Direction::UP;    c->up = true;    c->update(); co.sendNETCP(c->getNE()); } }
+                    if (events.key.keysym.sym == SDLK_d) { if (!c->right) { c->countDir += uti::Direction::RIGHT; c->right = true; c->update(); co.sendNETCP(c->getNE()); } }
+                    if (events.key.keysym.sym == SDLK_s) { if (!c->down)  { c->countDir += uti::Direction::DOWN;  c->down = true;  c->update(); co.sendNETCP(c->getNE()); } }
+                    if (events.key.keysym.sym == SDLK_q) { if (!c->left)  { c->countDir += uti::Direction::LEFT;  c->left = true;  c->update(); co.sendNETCP(c->getNE()); } }
                     //--- Spells ---//
                     if (events.key.keysym.sym == SDLK_a) { if (!c->isSpellActive()) { c->setCancelAA(true); if (!c->isSpellActive()) { if (t_spell.joinable()) t_spell.join(); t_spell = thread(t_run_spell, c->getSpell(1), nullptr); } } }
                     if (events.key.keysym.sym == SDLK_e) { if (!c->isSpellActive()) { if (!c->isAAActive()) { if (t_aa.joinable()) t_aa.join(); t_aa = thread(t_run_aa, dynamic_cast<AutoAttack*>(c->getSpell(0)), nullptr); } } }
 
-                    //    //--- Caméra ---//
+                    //--- Caméra ---//
                     if (events.key.keysym.sym == SDLK_SPACE) { cameraLock = true;        resetAllElementsPos(); c->updateMovebox(); }
                     if (events.key.keysym.sym == SDLK_y)     { cameraLock = !cameraLock; resetAllElementsPos(); c->updateMovebox(); }
                     break;
-                case SDL_KEYUP: // Un événement de type touche relâchée est effectué                
+                case SDL_KEYUP: // Un événement de type touche relâchée est effectué
+                    //--- Quitter le jeu ---//
                     if (events.key.keysym.sym == SDLK_ESCAPE) { run = SDL_FALSE; c->setAlive(false); c->setCancelAA(true); }
-                    if (events.key.keysym.sym == SDLK_z) { if (c->up)    c->countDir -= uti::Direction::UP;     c->up = false;    c->update(); co.sendTCP(c->getCountDir()); }
-                    if (events.key.keysym.sym == SDLK_d) { if (c->right) c->countDir -= uti::Direction::RIGHT;  c->right = false; c->update(); co.sendTCP(c->getCountDir()); }
-                    if (events.key.keysym.sym == SDLK_q) { if (c->left)  c->countDir -= uti::Direction::LEFT;   c->left = false;  c->update(); co.sendTCP(c->getCountDir()); }
-                    if (events.key.keysym.sym == SDLK_s) { if (c->down)  c->countDir -= uti::Direction::DOWN;   c->down = false;  c->update(); co.sendTCP(c->getCountDir()); }
+                    //--- Déplacements ---//
+                    if (events.key.keysym.sym == SDLK_z) { if (c->up)    c->countDir -= uti::Direction::UP;     c->up = false;    c->update(); co.sendNETCP(c->getNE()); }
+                    if (events.key.keysym.sym == SDLK_d) { if (c->right) c->countDir -= uti::Direction::RIGHT;  c->right = false; c->update(); co.sendNETCP(c->getNE()); }
+                    if (events.key.keysym.sym == SDLK_q) { if (c->left)  c->countDir -= uti::Direction::LEFT;   c->left = false;  c->update(); co.sendNETCP(c->getNE()); }
+                    if (events.key.keysym.sym == SDLK_s) { if (c->down)  c->countDir -= uti::Direction::DOWN;   c->down = false;  c->update(); co.sendNETCP(c->getNE()); }
+                    //--- Caméra ---//
                     if (events.key.keysym.sym == SDLK_SPACE) cameraLock = false;
 
                     //--- UI SHORTCUTS ---//
@@ -307,7 +316,8 @@ int main(int argc, char* argv[])
     if(t_aa.joinable())      t_aa.join();
     if (t_camera.joinable()) t_camera.join();
     if (t_screenMsg.joinable()) t_screenMsg.join();
-    if (t_listen_udp.joinable()) t_listen_udp.join();
+    if (t_listen_tcp.joinable()) t_listen_tcp.join();
+    //if (t_listen_udp.joinable()) t_listen_udp.join();
 
     SDL_FreeSurface(loading_screen_img);
     SDL_DestroyTexture(loading_screen_texture);
@@ -319,55 +329,6 @@ int main(int argc, char* argv[])
     c = nullptr;
 
     return 0;
-}
-
-void t_run_handleKeyEvents()
-{
-    SDL_Event events;
-    while (true)
-    {
-        while (SDL_PollEvent(&events))
-        {
-            switch (events.type)
-            {
-            //case SDL_WINDOWEVENT: if (events.window.event == SDL_WINDOWEVENT_CLOSE) run = SDL_FALSE; break;
-            //case SDL_KEYDOWN: // Un événement de type touche enfoncée est effectué
-            //    //--- Déplacements ---//
-            //    if (events.key.keysym.sym == SDLK_z) { if (!c->up)    c->countDir += uti::Direction::UP;    c->up = true;    c->update(); }
-            //    if (events.key.keysym.sym == SDLK_d) { if (!c->right) c->countDir += uti::Direction::RIGHT; c->right = true; c->update(); }
-            //    if (events.key.keysym.sym == SDLK_s) { if (!c->down)  c->countDir += uti::Direction::DOWN;  c->down = true;  c->update(); }
-            //    if (events.key.keysym.sym == SDLK_q) { if (!c->left)  c->countDir += uti::Direction::LEFT;  c->left = true;  c->update(); }
-            //    //--- Spells ---//
-            //    //if (events.key.keysym.sym == SDLK_a) { if (!c->isSpellActive()) { c->setCancelAA(true); if (!c->isSpellActive()) { if (t_spell.joinable()) t_spell.join(); t_spell = thread(t_run_spell, c->getSpell(1)); } } }
-            //    //if (events.key.keysym.sym == SDLK_e) { if (!c->isSpellActive()) { if (!c->isAAActive()) { if (t_aa.joinable()) t_aa.join(); t_aa = thread(t_run_aa, dynamic_cast<AutoAttack*>(c->getSpell(0))); } } }
-
-            //    //--- Caméra ---//
-            //    if (events.key.keysym.sym == SDLK_SPACE) { cameraLock = true;        resetAllElementsPos(); c->updateMovebox(); }
-            //    if (events.key.keysym.sym == SDLK_y) { cameraLock = !cameraLock; resetAllElementsPos(); c->updateMovebox(); }
-            //    break;
-            //case SDL_KEYUP: // Un événement de type touche relâchée est effectué                
-            //    if (events.key.keysym.sym == SDLK_ESCAPE) { run = SDL_FALSE; c->setAlive(false); c->setCancelAA(true); }
-            //    if (events.key.keysym.sym == SDLK_z) { if (c->up)    c->countDir -= uti::Direction::UP;     c->up = false;    c->update(); }
-            //    if (events.key.keysym.sym == SDLK_d) { if (c->right) c->countDir -= uti::Direction::RIGHT;  c->right = false; c->update(); }
-            //    if (events.key.keysym.sym == SDLK_q) { if (c->left)  c->countDir -= uti::Direction::LEFT;   c->left = false;  c->update(); }
-            //    if (events.key.keysym.sym == SDLK_s) { if (c->down)  c->countDir -= uti::Direction::DOWN;   c->down = false;  c->update(); }
-            //    if (events.key.keysym.sym == SDLK_SPACE) cameraLock = false;
-
-            //    //--- UI SHORTCUTS ---//
-            //    if (events.key.keysym.sym == SDLK_l) ui->setQBVisible(!ui->isQBVisible());
-            //    break;
-            //case SDL_MOUSEMOTION:
-            //    mouseX = events.motion.x;   mouseY = events.motion.y;
-            //    break;
-            case SDL_MOUSEBUTTONDOWN:
-                //cout << mouseX << " : " << mouseY << endl;
-                //if (events.button.button == SDL_BUTTON_LEFT)  handleLeftClick(events, t_screenMsg);
-                //else if (events.button.button == SDL_BUTTON_RIGHT) handleRightClick(events, t_screenMsg);
-                break;
-            }
-        }
-        SDL_Delay(1);
-    }
 }
 
 void t_move_player()
@@ -385,10 +346,10 @@ void t_move_player()
         //cout << v_elements_solid.size() << endl;
         if (c->isMoving() && !c->isSpellActive()) { mtx.lock(); c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime); mtx.unlock(); }
         //cout << c->getXMap() << " : " << c->getYMap() << endl;
-        ne.x = c->getXMap() * 100;
-        ne.y = c->getYMap() * 100;
+        //ne.x = c->getXMap() * 100;
+        //ne.y = c->getYMap() * 100;
         //co.sendNEUDP(ne);
-        SDL_Delay(1);
+        Sleep(1);
     }
 }
 
@@ -420,8 +381,20 @@ void t_receive_data_udp()
     {
         co.recvNEUDP(ne);
         
-        c->setX((int)(ne.x / 100) % 1920);
-        c->setY((int)(ne.y / 100) % 1080);
+        //c->setX((int)(ne.x / 100) % 1920);
+        //c->setY((int)(ne.y / 100) % 1080);
+    }
+}
+
+void t_receive_data_TCP()
+{
+
+    uti::NetworkEntity ne = { 0, 0, 0, 0, 0 };
+    while (run)
+    {
+        if (co.recvNETCP(ne)) { if (ne.x != 0) cout << "TCP NE received: " << ne.id << " : " << ne.x << " : " << ne.y << endl; ne.x = 0; }
+        else run = SDL_FALSE;
+            
     }
 }
 
