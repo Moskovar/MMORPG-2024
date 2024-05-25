@@ -107,7 +107,7 @@ void Connection::sendNEUDP(uti::NetworkEntity& ne)
     }
 }
 
-bool Connection::recvNETCP(uti::NetworkEntity& ne)
+bool Connection::recvNETCP(uti::NetworkEntity& ne, SDL_bool& run)
 {
     fd_set readfds;//structure pour surveiller un ensemble de descripteurs de fichiers pour lire (ici les sockets)
     timeval timeout;
@@ -122,7 +122,12 @@ bool Connection::recvNETCP(uti::NetworkEntity& ne)
         if (bytesReceived <= 0)
         {
             int wsaError = WSAGetLastError();
-            if (wsaError == 10035) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); return true; }
+            if (wsaError == 10035) //socket mode non bloquant n'a rien reçu
+            { 
+                std::this_thread::sleep_for(std::chrono::milliseconds(1)); 
+                if (!run) break;
+                continue;   
+            }
             cout << "Error receiving msg " << wsaError << endl;
             // Gestion des erreurs ou de la déconnexion
             return false;

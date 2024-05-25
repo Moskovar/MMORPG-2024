@@ -44,8 +44,9 @@ Warrior* c = nullptr;
 UI* ui = nullptr;
 const int mfWidth = 4, mfHeight = 4;
 Map m(mfWidth, mfHeight, renderer);
-vector<vector<Element*>> v_elements = { {}, {}, {} };//0 character  1 npcs
+vector<vector<Element*>> v_elements = { {}, {} };//0 character  1 autres entities, 2????
 vector<Element*> v_elements_solid, v_elements_depth;
+map<int, Entity*> entities;
 
 float cameraSpeed = 5;
 bool cameraLock = false;
@@ -66,9 +67,6 @@ void t_receive_data_TCP();
 
 int main(int argc, char* argv[])
 {
-    uti::NetworkEntity ne = { -1, 0, 0, 0, 0 };
-    while(ne.id == -1) co.recvNETCP(ne);
-    //if (ne.id == -1) { cout << "Le serveur est plein" << endl; exit(1); }changer avec une fermeture prope du socket ??
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
@@ -81,6 +79,10 @@ int main(int argc, char* argv[])
         SDL_Quit();
         return 1;
     }
+
+    uti::NetworkEntity ne = { 0, 0, 0, 0, 0 };
+    co.recvNETCP(ne, run);
+    if (ne.id == -1) { cout << "Le serveur est plein" << endl; exit(1); }//changer avec une fermeture prope du socket ??
 
     //if (SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1") == SDL_FALSE) {
     //    std::cerr << "Impossible d'activer la VSync : " << SDL_GetError() << std::endl;
@@ -111,6 +113,7 @@ int main(int argc, char* argv[])
     float posx = ne.x / 100, posy = ne.y / 100;
     int rowMap = posy / 1080, colMap = posx / 1920, xOffset = width / 2 - 125 - ((int)posx % 1920), yOffset = height / 2 - 125 - ((int)posy % 1080);
     c = new Warrior("Titus", (int)posx % 1920, (int)posy % 1080, ne.id, uti::Category::PLAYER, renderer);
+    entities[ne.id] = c;
     c->setXYMap(posx, posy);
     NPC npc("DENT", 2800, 1450, -1, uti::Category::NPC, "character/warrior", false, renderer);
     ui = new UI(window, renderer, c);
@@ -263,7 +266,7 @@ int main(int argc, char* argv[])
         //cout << "render lock" << endl;
         SDL_RenderClear(renderer);
         //mf->draw(renderer);
-       m.draw(renderer);
+        m.draw(renderer);
 
         for (int i = 0; i < v_elements_depth.size(); i++)
         {
@@ -298,12 +301,6 @@ int main(int argc, char* argv[])
 
         frameTime = SDL_GetTicks() - startTime;
 
-        //// Limiter les FPS en attendant le temps restant
-        //if (frameTime < FRAME_TIME) {
-        //    SDL_Delay(FRAME_TIME - frameTime);
-        //    //cout << FRAME_TIME - frameTime << endl;
-        //}
-        //cout << "render unlock" << endl;
         mtx.unlock();
         SDL_Delay(1);
 
@@ -319,14 +316,27 @@ int main(int argc, char* argv[])
     if (t_listen_tcp.joinable()) t_listen_tcp.join();
     //if (t_listen_udp.joinable()) t_listen_udp.join();
 
+
     SDL_FreeSurface(loading_screen_img);
     SDL_DestroyTexture(loading_screen_texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 
-    delete c;
-    c = nullptr;
+    if (c != nullptr)//déjà supprimé avec le map mais on sait jamais?
+    {
+        delete c;
+        c = nullptr;
+    }
+
+    //for (auto it = entities.begin(); it != entities.end(); ++it)//pour être sûr que c'est bien clean
+    //{
+    //    if (it->second)
+    //    {
+    //        delete it->second;
+    //        it->second = nullptr;
+    //    }
+    //}
 
     return 0;
 }
@@ -392,9 +402,54 @@ void t_receive_data_TCP()
     uti::NetworkEntity ne = { 0, 0, 0, 0, 0 };
     while (run)
     {
-        if (co.recvNETCP(ne)) { if (ne.x != 0) cout << "TCP NE received: " << ne.id << " : " << ne.x << " : " << ne.y << endl; ne.x = 0; }
+        if (co.recvNETCP(ne, run)) cout << "TCP NE received: " << ne.id << " : " << (float)ne.x / 100 << " : " << (float)ne.y / 100 << " : " << ne.timestamp << endl;
         else run = SDL_FALSE;
+        if (ne.timestamp == -1)//alors c'est une déconnexion
+        {
+            mtx.lock();
+            int i_delete = -1, i_delete_depth = -1;
+
+            for (int i = 0; i < v_elements[1].size(); i++)
+                if (dynamic_cast<Entity*>(v_elements[1][i]))
+                    if (dynamic_cast<Entity*>(v_elements[1][i])->getID() == ne.id)
+                    {
+                        i_delete = i;
+                        break;
+                    }
+
+            for (int i = 0; i < v_elements_depth.size(); i++)
+                if (dynamic_cast<Entity*>(v_elements_depth[i]))
+                    if (dynamic_cast<Entity*>(v_elements_depth[i])->getID() == ne.id)
+                    {
+                        i_delete_depth = i;
+                        break;
+                    }
+
+            if (entities[ne.id])
+            {
+                delete entities[ne.id];//on delete le pointeur
+                entities[ne.id] = nullptr;
+            }
+
+            entities.erase(ne.id);//puis on le supprime de toutes les listes
+            if(i_delete != -1) v_elements[1].erase(v_elements[1].begin() + i_delete);
+            if(i_delete_depth != -1) v_elements_depth.erase(v_elements_depth.begin() + i_delete_depth);
+
             
+
+            mtx.unlock();
+            continue;
+        }
+        if (!entities[ne.id] && c->getID() != ne.id) //si c'est le personnage du joueur alors il est déjà mis à sa création au début
+        { 
+            mtx.lock(); 
+            entities[ne.id] = new Warrior("Teeta", ne.x / 100 % 1920, ne.y / 100 % 1080, ne.id, uti::Category::PLAYER, renderer);  
+            //cout << entities[ne.id]->getX() << " : " << entities[ne.id]->getY() << endl;
+            v_elements[1].push_back(entities[ne.id]);
+            v_elements_depth.push_back(entities[ne.id]);
+            mtx.unlock();
+        }
+        cout << "v_elements size: " << v_elements[1].size() << endl;
     }
 }
 
@@ -421,7 +476,7 @@ void t_update_camera()
                     for (Element* e : v)
                     {
                         e->updateXOffset(cameraSpeed);
-                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element 
                     }
                 m.updateXOffset(cameraSpeed);
             }//on déplace la caméra dans un sens et on enregistre l'offset dans l'autre sens pour revenir au point de départ
@@ -431,7 +486,7 @@ void t_update_camera()
                     for (Element* e : v)
                     {
                         e->updateXOffset(-cameraSpeed);
-                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element
                     }
                 m.updateXOffset(-cameraSpeed);
             }
@@ -442,7 +497,7 @@ void t_update_camera()
                     for (Element* e : v)
                     {
                         e->updateYOffset(cameraSpeed);
-                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element
                     }
 
                 //--- Mise à jour de la position des fragments de map ---//
@@ -455,7 +510,7 @@ void t_update_camera()
                     for (Element* e : v)
                     {
                         e->updateYOffset(-cameraSpeed);
-                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element
                     }
                 //--- Mise à jour de la position des fragments de map ---//
                 m.updateYOffset(-cameraSpeed);

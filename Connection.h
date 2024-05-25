@@ -20,7 +20,7 @@ class Connection
 		void sendNETCP(string data);
 		void sendNETCP(uti::NetworkEntity ne);
 		void sendNEUDP(uti::NetworkEntity& ne);
-		bool recvNETCP(uti::NetworkEntity& ne);
+		bool recvNETCP(uti::NetworkEntity& ne, SDL_bool& run);
 		void recvNEUDP(uti::NetworkEntity& ne);
 
 	private:

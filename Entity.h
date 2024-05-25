@@ -41,14 +41,15 @@ class Entity : public Element
 		Spell* getSpell(int i)			  { return spells[i];												  }
 		Pseudo		 getPseudo()          { return this->pseudo;											  }
 		float		 getPseudoX()         { return this->x + 125 - this->pseudo.getWidth() / 2;			      }
-		float		 getPseudoY()         { return this->y + 35;											      }
+		float		 getPseudoY()         { return this->y + 35;											  }
 		string		 getCategory()        { return uti::categories[uti::Language::FR][uti::Category::PLAYER]; }
-		short		 getStep()            { return this->step / ANIMATIONMULTIPL;												  }
+		short		 getStep()            { return this->step / ANIMATIONMULTIPL;							  }
 		SDL_Rect	 getPos()             { return this->pos;												  }
 		float      	 getX()		          { return this->x;												      }
 		float      	 getY()		          { return this->y;												      }
 		short		 getXMovebox()        { return xMovebox;												  }
 		short		 getYMovebox()        { return yMovebox;												  }
+		short		 getID()			  { return this->id;												  }
 		SDL_Rect*    getPClickBox()       { return &clickBox;												  }
 		float      	 getDir()		      { return this->dir;												  }
 		short      	 getCountDir()        { return this->countDir;											  }
@@ -106,6 +107,7 @@ class Entity : public Element
 		bool check_collisions(int x, int y) override;
 
 	protected:
+		short id = 0;
 		Pseudo pseudo;
 		SDL_Surface* imgPortrait  = nullptr;
 		SDL_Texture* textPortrait = nullptr;
@@ -113,17 +115,17 @@ class Entity : public Element
 		float deltaTime = 0;//a delete pour debug avec la position anticipée
 		float xChange = 0, yChange = 0;
 
-		short category, step, xMovebox, yMovebox;
-		float dir, xRate, yRate, speed;
-		bool alive, moving, spellActive, aaActive, cancelAA;
+		short category = 0, step = 0, xMovebox = 0, yMovebox = 0;
+		float dir = 0.0f, xRate = 0.0f, yRate = 0.0f, speed = 0.0f;
+		bool alive = true, moving = false, spellActive = false, aaActive = false, cancelAA = false;
 
 		short animationID = 0;
 		map <short, map<float, SDL_Surface*[30]>> img;
 		map <short, map<float, SDL_Texture*[30]>> text;
 
-		SDL_Rect clickBox;
+		SDL_Rect clickBox{ 0, 0, 0, 0 };
 
 		Spell* spells[4];
 
-		uti::NetworkEntity ne;
+		uti::NetworkEntity ne;//useless??
 };

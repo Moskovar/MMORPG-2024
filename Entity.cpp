@@ -11,7 +11,7 @@ Entity::Entity(std::string name, float x, float y, int id, int category, string 
 {
     this->pseudo = Pseudo(name, renderer);
 
-    this->ne.id    = id;
+    this->id       = id;
     this->category = category;
     this->step     = 0;
     this->speed    = 400;
