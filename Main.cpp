@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
     {
         startTime = SDL_GetTicks();
         //cout << c->getXMap() << " : " << c->getYMap() << endl;
-        sort(v_elements[1].begin(), v_elements[1].end(), compareZ);
+        /*sort(v_elements[1].begin(), v_elements[1].end(), compareZ);*/
         //sort(v_elements[2].begin(), v_elements[2].end(), compareZ);
         while (SDL_PollEvent(&events))
         {
@@ -395,22 +395,30 @@ void t_move_players()
 
                 if (e_cast->getXRate() == 0 && e_cast->getYRate() == 0) { e_cast->resetStep(); continue; }
 
-                e_cast->setXYMap(e_cast->getXMap() + e_cast->getSpeed() * e_cast->getXRate() * deltaTime, e_cast->getYMap() + e_cast->getSpeed() * e_cast->getYRate() * deltaTime);
-                e_cast->setX(c->getX() - (c->getXMap() - e_cast->getXMap()));
-                e_cast->setY(c->getY() - (c->getYMap() - e_cast->getYMap()));
+                bool collision = false;
+
+                float xChange = e_cast->getSpeed() * e_cast->getXRate() * deltaTime,
+                      yChange = e_cast->getSpeed() * e_cast->getYRate() * deltaTime;
 
                 dir = e_cast->getDir(), step = e_cast->getFlatStep();
-                //cout << dir << " : " << step << endl;
-                cout << dir << " : " << step << " : " << 11 * ANIMATIONMULTIPL << endl;
+
+                for (Element* b : v_elements_solid) if (b->check_collisions(e_cast->getXMovebox() + 5 * xChange, e_cast->getYMovebox() + 5 * yChange)) { collision = true; break; }
+                if (!collision)
+                {
+                    e_cast->setXYMap(e_cast->getXMap() + xChange, e_cast->getYMap() + yChange);
+                    e_cast->setX(c->getX() - (c->getXMap() - e_cast->getXMap()));
+                    e_cast->setY(c->getY() - (c->getYMap() - e_cast->getYMap()));
+                    
+                    e_cast->updateMovebox();
+                    e_cast->updateClickBox();
+                }
+
                 if (dir == 0)
                     if (step < 9 * ANIMATIONMULTIPL)  e_cast->increaseStep();
                     else                              e_cast->resetStep();
                 else if (dir == 1)
-                {
-                    //cout << ANIMATIONMULTIPL << " : " << e_cast->getANIMATIONMULTIPL() << endl;
-                    if (step < 11 * ANIMATIONMULTIPL) { e_cast->increaseStep(); }
-                    else { e_cast->resetStep(); }
-                }
+                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
+                    else                              e_cast->resetStep();
                 else if (dir == 2)
                     if (step < 8 * ANIMATIONMULTIPL)  e_cast->increaseStep();
                     else                              e_cast->resetStep();
@@ -431,6 +439,10 @@ void t_move_players()
                     else                              e_cast->resetStep();
             }
         }
+        sort(v_elements[1].begin(), v_elements[1].end(), compareZ);
+        //if (entities[0] && entities[1]) cout << entities[0]->getY() << " : " << entities[1]->getY() << endl;
+        for (Element* e : v_elements_depth) cout << e->getY() << " : ";
+        cout << endl;
         mtx.unlock();
         SDL_Delay(1);
 
