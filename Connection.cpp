@@ -80,8 +80,8 @@ void Connection::sendNETCP(uti::NetworkEntity ne)
     }
     ne.id = htons(ne.id);
     ne.countDir = htons(ne.countDir);
-    ne.x = htonl(ne.x);
-    ne.y = htonl(ne.y);
+    ne.xMap = htonl(ne.xMap);
+    ne.yMap = htonl(ne.yMap);
     ne.timestamp = htonll(ne.timestamp);
     int iResult = ::send(tcpSocket, (const char*)&ne, sizeof(ne), 0);
     if (iResult == SOCKET_ERROR) {
@@ -93,8 +93,8 @@ void Connection::sendNETCP(uti::NetworkEntity ne)
 void Connection::sendNEUDP(uti::NetworkEntity& ne)
 {
     ne.id = htons(ne.id);
-    ne.x = htonl(ne.x);
-    ne.y = htonl(ne.y);
+    ne.xMap = htonl(ne.xMap);
+    ne.yMap = htonl(ne.yMap);
 
     // Envoi des données sérialisées
     int bytesSent = sendto(udpSocket, (const char*)&ne, sizeof(ne), 0, (sockaddr*)&udpServerAddr, sizeof(udpServerAddr));
@@ -138,9 +138,9 @@ bool Connection::recvNETCP(uti::NetworkEntity& ne, SDL_bool& run)
 
         ne.id       = ntohs(ne.id);
         ne.countDir = ntohs(ne.countDir);
-        ne.x        = ntohl(ne.x);
-        ne.y        = ntohl(ne.y);
-        //cout << "Received: " << ne.id << " : " << ne.x << " : " << ne.y << endl;
+        ne.xMap = ntohl(ne.xMap);
+        ne.yMap = ntohl(ne.yMap);
+        cout << "Received: " << ne.id << " : " << ne.xMap << " : " << ne.yMap << endl;
     }
 
     return true;
@@ -176,11 +176,11 @@ void Connection::recvNEUDP(uti::NetworkEntity& ne)
             }
 
             ne.id = ntohl(ne2.id);
-            ne.x = ntohl(ne2.x);
-            ne.y = ntohl(ne2.y);
+            ne.xMap = ntohl(ne2.xMap);
+            ne.yMap = ntohl(ne2.yMap);
 
-            float x = (float)ne.x / 100;
-            float y = (float)ne.y / 100;
+            float x = (float)ne.xMap / 100;
+            float y = (float)ne.yMap / 100;
 
             std::cout << "ID: " << ne.id << ", X: " << x << ", Y: " << y << std::endl;
             if (bytesReceived == SOCKET_ERROR) {

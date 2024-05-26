@@ -39,7 +39,7 @@ SDL_bool run = SDL_TRUE;
 Uint32 flags;
 float deltaTime = 0;
 
-int width = 1920, height = 1080;
+int width = 1920, height = 1080, initialXOffset = 0, initialYOffset = 0;
 Warrior* c = nullptr;
 UI* ui = nullptr;
 const int mfWidth = 4, mfHeight = 4;
@@ -64,6 +64,7 @@ void handleRightClick(SDL_Event& events, thread& t_screenMsg);
 void resetAllElementsPos();
 void t_receive_data_udp();
 void t_receive_data_TCP();
+void applyInitialOffset(Entity* e);
 
 int main(int argc, char* argv[])
 {
@@ -110,29 +111,32 @@ int main(int argc, char* argv[])
 
     //cout << ne.id << " : " << ne.countDir << " : " << ne.x << " : " << ne.y << " : " << ne.timestamp << endl;
         
-    float posx = ne.x / 100, posy = ne.y / 100;
-    int rowMap = posy / 1080, colMap = posx / 1920, xOffset = width / 2 - 125 - ((int)posx % 1920), yOffset = height / 2 - 125 - ((int)posy % 1080);
-    c = new Warrior("Titus", (int)posx % 1920, (int)posy % 1080, ne.id, uti::Category::PLAYER, renderer);
+    float posx = ne.xMap / 100, posy = ne.yMap / 100;
+    int rowMap = posy / 1080, colMap = posx / 1920;
+    initialXOffset = width / 2 - 125 - ((int)posx % 1920);
+    initialYOffset = height / 2 - 125 - ((int)posy % 1080);
+    c = new Warrior("Titus", posx, posy, ne.id, uti::Category::PLAYER, renderer);
     entities[ne.id] = c;
     c->setXYMap(posx, posy);
-    NPC npc("DENT", 2800, 1450, -1, uti::Category::NPC, "character/warrior", false, renderer);
+    NPC npc("DENT", 2780, 1440, -1, uti::Category::NPC, "character/warrior", false, dynamic_cast<Character*>(c), renderer);
     ui = new UI(window, renderer, c);
     
     //qb.addQuest(new Quest("First quest", "First quest in the world", 100, window, renderer));
     v_elements[0].push_back(dynamic_cast<Element*>(c));
     v_elements[1].push_back(dynamic_cast<Element*>(&npc));
 
+    //--- Personnage au milieu de l'écran ---//
+    c->addXOffset(initialXOffset);
+    c->addYOffset(initialYOffset);
+    c->resetPos();
+
+    //--- Elements du vecteur ajustés au déplaçage du personnage au milieu de lécran---//
     for (Element* e : v_elements[1])
     {
-        e->addXOffset(xOffset - colMap * 1920);
-        e->addYOffset(yOffset - rowMap * 1080);
+        e->addXOffset(initialXOffset);
+        e->addYOffset(initialYOffset);
         e->resetPos();
     }
-
-    //--- Personnage au milieu de l'écran ---//
-    c->addXOffset(xOffset);
-    c->addYOffset(yOffset);
-    c->resetPos();
 
     //--- Construction de la map ---//
     MapFragment* mf1 = new MapFragment("enchantedforest", renderer, {});
@@ -177,7 +181,7 @@ int main(int argc, char* argv[])
     for (int i = 0; i < mfWidth; i++)
         for (int j = 0; j < mfHeight; j++)
         {
-            m.addOffset(i, j, xOffset + (j - colMap) * 1920, yOffset + (i - rowMap) * 1080);//on retire à i et j rowMap et colMap pour se placer au bon endroit
+            m.addOffset(i, j, initialXOffset + (j - colMap) * 1920, initialYOffset + (i - rowMap) * 1080);//on retire à i et j rowMap et colMap pour se placer au bon endroit
             m.resetPos();
         }
 
@@ -354,7 +358,9 @@ void t_move_player()
         deltaTime = (currentTime - lastTime) / 1000.0f; // Convert to seconds
         lastTime = currentTime;
         //cout << v_elements_solid.size() << endl;
-        if (c->isMoving() && !c->isSpellActive()) { mtx.lock(); c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime); mtx.unlock(); }
+        mtx.lock();
+        if (c->isMoving() && !c->isSpellActive()) { c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime); }
+        mtx.unlock();
         //cout << c->getXMap() << " : " << c->getYMap() << endl;
         //ne.x = c->getXMap() * 100;
         //ne.y = c->getYMap() * 100;
@@ -402,8 +408,8 @@ void t_receive_data_TCP()
     uti::NetworkEntity ne = { 0, 0, 0, 0, 0 };
     while (run)
     {
-        if (co.recvNETCP(ne, run)) cout << "TCP NE received: " << ne.id << " : " << (float)ne.x / 100 << " : " << (float)ne.y / 100 << " : " << ne.timestamp << endl;
-        else run = SDL_FALSE;
+        if (co.recvNETCP(ne, run) && run) cout << "TCP NE received: " << ne.id << " : " << (float)ne.xMap / 100 << " : " << (float)ne.yMap / 100 << " : " << ne.timestamp << endl;//pour le debug
+        else { run = SDL_FALSE; break;  }
         if (ne.timestamp == -1)//alors c'est une déconnexion
         {
             mtx.lock();
@@ -435,22 +441,39 @@ void t_receive_data_TCP()
             if(i_delete != -1) v_elements[1].erase(v_elements[1].begin() + i_delete);
             if(i_delete_depth != -1) v_elements_depth.erase(v_elements_depth.begin() + i_delete_depth);
 
-            
 
             mtx.unlock();
             continue;
         }
-        if (!entities[ne.id] && c->getID() != ne.id) //si c'est le personnage du joueur alors il est déjà mis à sa création au début
-        { 
+        
+        if (entities[ne.id])//si le personnage existe alors on le met à jour
+        {
+            //entities[ne.id].set
+            continue;
+        }
+        //pas besoin de tester le pointeur on le teste dans le if d'avant
+        if (/*!entities[ne.id] && */c->getID() != ne.id) //si c'est le personnage du joueur alors il est déjà mis à sa création au début
+        { //connexion on l'ajoute aux listes
             mtx.lock(); 
-            entities[ne.id] = new Warrior("Teeta", ne.x / 100 % 1920, ne.y / 100 % 1080, ne.id, uti::Category::PLAYER, renderer);  
+            entities[ne.id] = new Warrior("Teeta", ne.xMap / 100, ne.yMap / 100, ne.id, uti::Category::PLAYER, renderer);
+            //updateNetworkPlayer(entities[ne.id]);
             //cout << entities[ne.id]->getX() << " : " << entities[ne.id]->getY() << endl;
+            applyInitialOffset(entities[ne.id]);
             v_elements[1].push_back(entities[ne.id]);
             v_elements_depth.push_back(entities[ne.id]);
             mtx.unlock();
         }
-        cout << "v_elements size: " << v_elements[1].size() << endl;
+        //cout << "v_elements size: " << v_elements[1].size() << endl;
     }
+}
+
+void applyInitialOffset(Entity* e)
+{
+    /*e->setX(c->getX() - (c->getXMap() - e->getXMap()));
+    e->setY(c->getY() - (c->getYMap() - e->getYMap()));*/
+    e->addXOffset(initialXOffset);
+    e->addYOffset(initialYOffset);
+    e->resetPos();
 }
 
 void t_run_screenMsg()

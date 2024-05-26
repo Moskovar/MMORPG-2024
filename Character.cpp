@@ -1,6 +1,6 @@
 #include "Character.h"
 
-Character::Character(std::string name, float x, float y, int id, int category, string src, SDL_Renderer* renderer) : Entity(name, x, y, id, category, "character/" + src, renderer)
+Character::Character(std::string name, float xMap, float yMap, int id, int category, string src, SDL_Renderer* renderer) : Entity(name, xMap, yMap, id, category, "character/" + src, renderer)
 {
 	clickBox.x = x + 90;
 	clickBox.y = y + 65;

@@ -1,12 +1,13 @@
 #pragma once
 #include "Entity.h"
 #include "Quest.h"
+#include "Character.h"
 
 class NPC : public Entity
 {
 	public:
 		NPC() {}
-		NPC(std::string name, float x, float y, int id, int category, string className, bool isSolid, SDL_Renderer* renderer);
+		NPC(std::string name, float xMap, float yMap, int id, int category, string className, bool isSolid, Character* c, SDL_Renderer* renderer);// le character sert de référentiel pour attribuer le x y au NPC
 
 		Quest* getPQuest() { return &this->quest; }
 

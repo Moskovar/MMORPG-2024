@@ -10,7 +10,7 @@ class Element
 {
 public:
 	Element(){}
-	Element(float x, float y, int width, int height);
+	Element(float xMap, float yMap, int width, int height);
 
 	virtual void draw(SDL_Renderer* renderer)   = 0;
 	virtual bool isInFront(int x, int y)        = 0;
@@ -29,7 +29,7 @@ public:
 	float getXMap()    { return xMap;    }
 	float getYMap()    { return yMap;    }
 
-	void setXYMap(int x, int y) { this->xMap = x;	this->yMap = y; }
+	void setXYMap(float x, float y) { this->xMap = x;	this->yMap = y; }
 	void setX(float x) { this->x = x; pos.x = x; }
 	void setY(float y) { this->y = y; pos.y = y; }
 	void addXMap(int x) { xMap += x; }
@@ -41,6 +41,7 @@ public:
 
 
 protected:
+	short rowMap = 0, colMap = 0;
 	SDL_Rect pos{ 0, 0, 0, 0};
 	bool isSolid = false;
 	float xMap = 0, yMap = 0;//position sur la map

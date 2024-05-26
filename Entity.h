@@ -69,7 +69,7 @@ class Entity : public Element
 		float getDeltaTime() { return this->deltaTime; } //pour debug
 		float getXChange() { return this->xChange; }
 		float getYChange() { return this->yChange; }
-		uti::NetworkEntity getNE() { setNEDATA(); return ne; }
+		
 
 
 		void		 increaseX() { this->x++; this->pos.x = x; }
@@ -94,9 +94,7 @@ class Entity : public Element
 		void setPos(float x, float y);
 
 		//--- Méthode pour la NetworkEntity ---//
-		void setNEID(short id) { ne.id = id; }
-		void setNEDATA() {
-			ne.countDir = countDir; ne.x = xMap; ne.y = yMap; ne.timestamp = uti::getCurrentTimestamp(); }
+		uti::NetworkEntity getNE() { return {id, countDir, (int)xMap * 100, (int)yMap * 100, uti::getCurrentTimestamp() }; }
 
 		short countDir;
 		bool up = false, right = false, down = false, left = false;
@@ -108,6 +106,7 @@ class Entity : public Element
 
 	protected:
 		short id = 0;
+
 		Pseudo pseudo;
 		SDL_Surface* imgPortrait  = nullptr;
 		SDL_Texture* textPortrait = nullptr;
@@ -126,6 +125,4 @@ class Entity : public Element
 		SDL_Rect clickBox{ 0, 0, 0, 0 };
 
 		Spell* spells[4];
-
-		uti::NetworkEntity ne;//useless??
 };
