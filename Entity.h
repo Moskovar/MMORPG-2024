@@ -37,6 +37,7 @@ class Entity : public Element
 		virtual void draw(SDL_Renderer* renderer) = 0;
 
 		void move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime);
+		void moveNetworkEntity(vector<Element*>& v_elements, float& deltaTime);
 
 		Spell* getSpell(int i)			  { return spells[i];												  }
 		Pseudo		 getPseudo()          { return this->pseudo;											  }
@@ -44,6 +45,7 @@ class Entity : public Element
 		float		 getPseudoY()         { return this->y + 35;											  }
 		string		 getCategory()        { return uti::categories[uti::Language::FR][uti::Category::PLAYER]; }
 		short		 getStep()            { return this->step / ANIMATIONMULTIPL;							  }
+		short		 getFlatStep()		  { return this->step;												  }
 		SDL_Rect	 getPos()             { return this->pos;												  }
 		float      	 getX()		          { return this->x;												      }
 		float      	 getY()		          { return this->y;												      }
@@ -52,10 +54,10 @@ class Entity : public Element
 		short		 getID()			  { return this->id;												  }
 		SDL_Rect*    getPClickBox()       { return &clickBox;												  }
 		float      	 getDir()		      { return this->dir;												  }
+		float		 getSpeed()			  { return this->speed;												  }
+		float		 getXRate()			  { return this->xRate;												  }
+		float		 getYRate()			  { return this->yRate;												  }
 		short      	 getCountDir()        { return this->countDir;											  }
-		float      	 getSpeed()	          { return this->speed;												  }
-		float      	 getXRate()           { return this->xRate;												  }
-		float      	 getYRate()           { return this->yRate;												  }
 		int			 getANIMATIONMULTIPL(){ return ANIMATIONMULTIPL;										  }
 		bool		 inClickBox(int x, int y);
 		short      	 getAnimationID()     { return this->animationID;										  }
@@ -72,24 +74,25 @@ class Entity : public Element
 		
 
 
-		void		 increaseX() { this->x++; this->pos.x = x; }
-		void		 updateMovebox()				 { xMovebox = x + 125; yMovebox = y + 185;				  }
-		void		 updateClickBox()				 { clickBox.x = pos.x + 90; clickBox.y = pos.y + 65;	  }
-		void		 addX(float x)				     { this->x += x; this->pos.x = this->x;					  }
-		void		 addY(float y)				     { this->y += y; this->pos.y = this->y;					  }
-		void		 addXOffset(int xOffset)		 { this->xOffset += xOffset;							  }
-		void		 addYOffset(int yOffset)		 { this->yOffset += yOffset;							  }
-		void		 setStep(short step)			 { this->step = step;									  }
-		void		 increaseStep()					 { this->step++;										  }
-		void		 setAlive(bool alive)			 { this->alive = alive;									  }
-		void		 setMoving(bool state)			 { this->moving = state;								  }
-		void		 update();																				  
-		void		 setAAActive(bool state)		 { this->aaActive = state;								  }
-		void		 setCancelAA(bool state)		 { this->cancelAA = state;								  }
-		void		 setAnimationID(int animationID) { this->animationID = animationID;						  }
-		void		 setSpellActive(bool state)      { this->spellActive = state;							  }
-		void setXChange(float xChange)				 { this->xChange = xChange;								  }
-		void setYChange(float yChange)				 { this->yChange = yChange;								  }
+		void increaseX()					 { this->x++; this->pos.x = x;							  }
+		void increaseStep()					 { step++;												  }
+		void resetStep()					 { step = 0;											  }
+		void updateMovebox()				 { xMovebox = x + 125; yMovebox = y + 185;				  }
+		void updateClickBox()				 { clickBox.x = pos.x + 90; clickBox.y = pos.y + 65;	  }
+		void addX(float x)				     { this->x += x; this->pos.x = this->x;					  }
+		void addY(float y)				     { this->y += y; this->pos.y = this->y;					  }
+		void addXOffset(int xOffset)		 { this->xOffset += xOffset;							  }
+		void addYOffset(int yOffset)		 { this->yOffset += yOffset;							  }
+		void setStep(short step)			 { this->step = step;									  }
+		void setAlive(bool alive)			 { this->alive = alive;									  }
+		void setMoving(bool state)			 { this->moving = state;								  }
+		void update();																				  
+		void setAAActive(bool state)		 { this->aaActive = state;								  }
+		void setCancelAA(bool state)		 { this->cancelAA = state;								  }
+		void setAnimationID(int animationID) { this->animationID = animationID;						  }
+		void setSpellActive(bool state)      { this->spellActive = state;							  }
+		void setXChange(float xChange)		 { this->xChange = xChange;								  }
+		void setYChange(float yChange)		 { this->yChange = yChange;								  }
 
 		void setPos(float x, float y);
 

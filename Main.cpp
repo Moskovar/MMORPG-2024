@@ -53,6 +53,7 @@ bool cameraLock = false;
 int mouseX = -1, mouseY = -1;
 
 void t_move_player();
+void t_move_players();
 void t_run_spell(Spell* spell, Entity* enemy);
 void t_run_aa(AutoAttack* spell, Entity* enemy);
 void t_run_screenMsg();
@@ -65,6 +66,8 @@ void resetAllElementsPos();
 void t_receive_data_udp();
 void t_receive_data_TCP();
 void applyInitialOffset(Entity* e);
+void updateNetworkPlayer(Entity* e, const uti::NetworkEntity& ne);
+void moveNetworkEntity(Entity* e);
 
 int main(int argc, char* argv[])
 {
@@ -194,6 +197,7 @@ int main(int argc, char* argv[])
 
     // Variables pour le calcul du delta time
     thread t_player(t_move_player);
+    thread t_players(t_move_players);
     thread t_spell;
     thread t_aa;
     thread t_screenMsg;
@@ -249,6 +253,7 @@ int main(int argc, char* argv[])
                     if (events.key.keysym.sym == SDLK_d) { if (c->right) c->countDir -= uti::Direction::RIGHT;  c->right = false; c->update(); co.sendNETCP(c->getNE()); }
                     if (events.key.keysym.sym == SDLK_q) { if (c->left)  c->countDir -= uti::Direction::LEFT;   c->left = false;  c->update(); co.sendNETCP(c->getNE()); }
                     if (events.key.keysym.sym == SDLK_s) { if (c->down)  c->countDir -= uti::Direction::DOWN;   c->down = false;  c->update(); co.sendNETCP(c->getNE()); }
+                    if (events.key.keysym.sym == SDLK_w) SDL_SetWindowPosition(window, -1920, 0);
                     //--- Caméra ---//
                     if (events.key.keysym.sym == SDLK_SPACE) cameraLock = false;
 
@@ -313,6 +318,7 @@ int main(int argc, char* argv[])
     }
 
     if(t_player.joinable())  t_player.join();
+    if (t_players.joinable())  t_players.join();
     if(t_spell.joinable())   t_spell.join();
     if(t_aa.joinable())      t_aa.join();
     if (t_camera.joinable()) t_camera.join();
@@ -350,7 +356,7 @@ void t_move_player()
     Uint32 lastTime = SDL_GetTicks64();
     Uint32 currentTime;
     float deltaTime;
-    uti::NetworkEntity ne = { 0, 0, 0 };
+    uti::NetworkEntity ne = { 0, 0, 0 };//??
     
     while (c->isAlive())
     {
@@ -366,6 +372,69 @@ void t_move_player()
         //ne.y = c->getYMap() * 100;
         //co.sendNEUDP(ne);
         Sleep(1);
+    }
+}
+
+void t_move_players()
+{
+    Uint32 lastTime = SDL_GetTicks64();
+    Uint32 currentTime;
+    float deltaTime;
+    short dir = 0, step = 0;
+    while (run)
+    {
+        currentTime = SDL_GetTicks();
+        deltaTime = (currentTime - lastTime) / 1000.0f; // Convert to seconds
+        lastTime = currentTime;
+        mtx.lock();
+        for (Element* e : v_elements[1])
+        {
+            if (dynamic_cast<Entity*>(e))
+            {
+                Entity* e_cast = dynamic_cast<Entity*>(e);
+
+                if (e_cast->getXRate() == 0 && e_cast->getYRate() == 0) { e_cast->resetStep(); continue; }
+
+                e_cast->setXYMap(e_cast->getXMap() + e_cast->getSpeed() * e_cast->getXRate() * deltaTime, e_cast->getYMap() + e_cast->getSpeed() * e_cast->getYRate() * deltaTime);
+                e_cast->setX(c->getX() - (c->getXMap() - e_cast->getXMap()));
+                e_cast->setY(c->getY() - (c->getYMap() - e_cast->getYMap()));
+
+                dir = e_cast->getDir(), step = e_cast->getFlatStep();
+                //cout << dir << " : " << step << endl;
+                cout << dir << " : " << step << " : " << 11 * ANIMATIONMULTIPL << endl;
+                if (dir == 0)
+                    if (step < 9 * ANIMATIONMULTIPL)  e_cast->increaseStep();
+                    else                              e_cast->resetStep();
+                else if (dir == 1)
+                {
+                    //cout << ANIMATIONMULTIPL << " : " << e_cast->getANIMATIONMULTIPL() << endl;
+                    if (step < 11 * ANIMATIONMULTIPL) { e_cast->increaseStep(); }
+                    else { e_cast->resetStep(); }
+                }
+                else if (dir == 2)
+                    if (step < 8 * ANIMATIONMULTIPL)  e_cast->increaseStep();
+                    else                              e_cast->resetStep();
+                else if (dir == 3)
+                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
+                    else                              e_cast->resetStep();
+                else if (dir == 0.5)
+                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
+                    else                              e_cast->resetStep();
+                else if (dir == 1.5)
+                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
+                    else                              e_cast->resetStep();
+                else if (dir == 2.5)
+                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
+                    else                               e_cast->resetStep();
+                else if (dir == 3.5)
+                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
+                    else                              e_cast->resetStep();
+            }
+        }
+        mtx.unlock();
+        SDL_Delay(1);
+
+
     }
 }
 
@@ -448,7 +517,8 @@ void t_receive_data_TCP()
         
         if (entities[ne.id])//si le personnage existe alors on le met à jour
         {
-            //entities[ne.id].set
+            //cout << "UPDATE RECEIVED !!" << endl;
+            updateNetworkPlayer(entities[ne.id], ne);
             continue;
         }
         //pas besoin de tester le pointeur on le teste dans le if d'avant
@@ -456,9 +526,7 @@ void t_receive_data_TCP()
         { //connexion on l'ajoute aux listes
             mtx.lock(); 
             entities[ne.id] = new Warrior("Teeta", ne.xMap / 100, ne.yMap / 100, ne.id, uti::Category::PLAYER, renderer);
-            //updateNetworkPlayer(entities[ne.id]);
-            //cout << entities[ne.id]->getX() << " : " << entities[ne.id]->getY() << endl;
-            applyInitialOffset(entities[ne.id]);
+            updateNetworkPlayer(entities[ne.id], ne);
             v_elements[1].push_back(entities[ne.id]);
             v_elements_depth.push_back(entities[ne.id]);
             mtx.unlock();
@@ -467,13 +535,26 @@ void t_receive_data_TCP()
     }
 }
 
-void applyInitialOffset(Entity* e)
+void applyInitialOffset(Entity* e)//useless af ?? use updateNetworkPlayer instead
 {
-    /*e->setX(c->getX() - (c->getXMap() - e->getXMap()));
-    e->setY(c->getY() - (c->getYMap() - e->getYMap()));*/
     e->addXOffset(initialXOffset);
     e->addYOffset(initialYOffset);
     e->resetPos();
+}
+
+void updateNetworkPlayer(Entity* e, const uti::NetworkEntity& ne)
+{
+    e->setXYMap((float)ne.xMap / 100, (float)ne.yMap / 100);
+    e->setX(c->getX() - (c->getXMap() - e->getXMap()));
+    e->setY(c->getY() - (c->getYMap() - e->getYMap()));
+    e->countDir = ne.countDir;
+    e->update();
+    //cout << e->getDir() << " : " << e->countDir << endl;
+}
+
+void moveNetworkEntity(Entity* e)
+{
+
 }
 
 void t_run_screenMsg()

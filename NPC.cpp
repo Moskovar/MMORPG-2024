@@ -38,7 +38,7 @@ void NPC::resetPos()
 
 void NPC::draw(SDL_Renderer* renderer)
 {
-	SDL_RenderCopy(renderer, text[animationID][dir][step], NULL, &this->pos);
+	SDL_RenderCopy(renderer, text[animationID][dir][step / ANIMATIONMULTIPL], NULL, &this->pos);
 	if (quest.getState() == 1) SDL_RenderCopy(renderer, UI::textQuest_available, NULL, &quest.iconPos);
 	pseudo.draw(renderer, getPseudoX(), getPseudoY());
 
