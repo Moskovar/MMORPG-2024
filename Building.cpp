@@ -21,6 +21,12 @@ Building::~Building()
         cout << "Building is cleared now !" << endl;
 }
 
+bool Building::isMoveBoxInArea(int mbX, int mbY)
+{
+    if (mbX >= pos.x && mbX <= pos.x + pos.w && mbY >= pos.y && mbY <= pos.y + pos.h) return true;
+    return false;
+}
+
 bool Building::isInFront(int x, int y) {
 
     if (x < this->pos.x || x > this->pos.x + imgBg->w - 1 || y < this->pos.y || y > this->pos.y + imgBg->h - 1) return false;// check table de vérité ?
@@ -65,6 +71,16 @@ bool Building::check_collisions(int x, int y)
     //printf("Pixel color at (%d, %d): R=%d, G=%d, B=%d, A=%d\n", x, y, red, green, blue, alpha);
 
     return false;
+}
+
+void Building::getEntitiesInArea(const map<int, Entity*>& entities)
+{
+    this->entities.clear();
+    for (auto it = entities.begin(); it != entities.end(); ++it)
+    {
+        if (it->second && isInFront(it->second->getXMovebox(), it->second->getYMovebox())) this->entities.push_back(it->second);//isMoveBoxInArea(it->second->getXMovebox(), it->second->getYMovebox())
+    }
+    cout << this->entities.size() << endl;
 }
 
 void Building::draw(SDL_Renderer* renderer)

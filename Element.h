@@ -39,6 +39,7 @@ public:
 	void resetPos(float xOffset, float yOffset) { addXOffset(x); addYOffset(y); resetPos(); }
 	void updateMapPos(float x, float y) { this->xMap += x;	this->yMap += y; }
 
+	bool isDrawn = false;//pour savoir si l'entité a été dessiné pour le calcul de profondeur
 
 protected:
 	short rowMap = 0, colMap = 0;

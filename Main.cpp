@@ -191,9 +191,11 @@ int main(int argc, char* argv[])
     v_elements_solid = m.getElements(true);
     v_elements_depth = m.getElements(false);
     v_elements_depth.push_back(&npc);
+    cout << "Size: " << v_elements_depth.size() << endl;
+    v_elements_depth.push_back(c);
+    cout << "Size: " << v_elements_depth.size() << endl;
 
-    sort(v_elements[1].begin(), v_elements[1].end(), compareZ);
-    //sort(v_elements[2].begin(), v_elements[2].end(), compareZ);
+    sort(v_elements_depth.begin(), v_elements_depth.end(), compareZ);
 
     // Variables pour le calcul du delta time
     thread t_player(t_move_player);
@@ -216,16 +218,15 @@ int main(int argc, char* argv[])
     //thread t_handleKeyEvents(t_run_handleKeyEvents);
     Uint32 startTime;
     int frameTime;
-    bool playerDrawn = false;
     //c->setMoving(true);
     //c->countDir += uti::Direction::LEFT;  c->left = true;  c->update();
     //cameraLock = true;
     while (run)
     {
         startTime = SDL_GetTicks();
-        //cout << c->getXMap() << " : " << c->getYMap() << endl;
-        /*sort(v_elements[1].begin(), v_elements[1].end(), compareZ);*/
-        //sort(v_elements[2].begin(), v_elements[2].end(), compareZ);
+        sort(v_elements_depth.begin(), v_elements_depth.end(), compareZ);
+        //for (Element* e : v_elements_depth) cout << e->getY() << " ";
+        //cout << endl;
         while (SDL_PollEvent(&events))
         {
             switch (events.type)
@@ -254,6 +255,7 @@ int main(int argc, char* argv[])
                     if (events.key.keysym.sym == SDLK_q) { if (c->left)  c->countDir -= uti::Direction::LEFT;   c->left = false;  c->update(); co.sendNETCP(c->getNE()); }
                     if (events.key.keysym.sym == SDLK_s) { if (c->down)  c->countDir -= uti::Direction::DOWN;   c->down = false;  c->update(); co.sendNETCP(c->getNE()); }
                     if (events.key.keysym.sym == SDLK_w) SDL_SetWindowPosition(window, -1920, 0);
+                    if (events.key.keysym.sym == SDLK_x) SDL_SetWindowPosition(window, 1920, 0);
                     //--- Caméra ---//
                     if (events.key.keysym.sym == SDLK_SPACE) cameraLock = false;
 
@@ -277,25 +279,103 @@ int main(int argc, char* argv[])
         //mf->draw(renderer);
         m.draw(renderer);
 
-        for (int i = 0; i < v_elements_depth.size(); i++)
+        //pas efficace avec tous les joueurs...
+        for(Element* e : v_elements_depth)
         {
-            if (!playerDrawn)
-                if (!v_elements_depth[i]->isInFront(c->getXMovebox(), c->getYMovebox()))
-                    v_elements_depth[i]->draw(renderer);
-                else
-                {
-                    c->draw(renderer);
-                    playerDrawn = true;
-                    v_elements_depth[i]->draw(renderer);
-                }
-            else
-                v_elements_depth[i]->draw(renderer);
+            if (!dynamic_cast<Building*>(e)) continue;
+            if (dynamic_cast<Building*>(e)) dynamic_cast<Building*>(e)->getEntitiesInArea(entities);
+            sort(dynamic_cast<Building*>(e)->entities.begin(), dynamic_cast<Building*>(e)->entities.end(), compareZ);
+            for (Entity* entity : dynamic_cast<Building*>(e)->entities)
+            {
+                entity->draw(renderer);
+                entity->isDrawn = true;
+            }
+            dynamic_cast<Building*>(e)->draw(renderer);
         }
-        if (!playerDrawn)c->draw(renderer);
-        playerDrawn = false;
+
+        //cout << "C: " << c->isDrawn << endl;
+
+        for (Element* e : v_elements_depth)
+        {
+            if (dynamic_cast<Entity*>(e) && !dynamic_cast<Entity*>(e)->isDrawn) { cout << dynamic_cast<Entity*>(e)->getPseudo().getFont().getText() << endl; e->draw(renderer); }
+        }
+       
+        //cout << "C: " << c->isDrawn << endl;
+        for (Element* e : v_elements_depth) e->isDrawn = false;
+
+        //c->isDrawn = false;
+        //for (int i = 0; i < v_elements_depth.size(); i++)
+        //{
+        //    Element* e = v_elements_depth[i];
+        //    if (i != 0 && dynamic_cast<Building*>(e)) continue;
+
+        //    if (!c->isDrawn)//si le joueur n'est pas dessiné
+        //    {
+        //        if (!e->isInFront(c->getXMovebox(), c->getYMovebox()))//si l'élément n'est pas devant le joueur, on dessine l'élément
+        //        {
+        //            e->draw(renderer);
+        //            e->isDrawn = true;
+        //        }
+        //        else//si l'élément est devant le joueur, on dessine le joueur puis on dessine l'élément
+        //        {
+        //            c->draw(renderer);
+        //            c->isDrawn = true;
+        //            e->draw(renderer);
+        //            e->isDrawn = true;
+        //        }
+        //    }
+        //    else//Si le joueur est dessiné
+        //    {   
+        //            e->draw(renderer);
+        //            e->isDrawn = true;
+        //    }
+
+        //    for (int j = 0; j < i; j++)// < i pour pas tester et dessiner des buildings plus loin dans la liste qui sont empty
+        //    {
+        //        if (!dynamic_cast<Building*>(v_elements_depth[j]))                       continue;//si pas bâtiment on skip
+        //        if (v_elements_depth[j]->isDrawn)                                        continue;//si déjà dessiné on skip
+        //        if (!dynamic_cast<Building*>(v_elements_depth[j])->isAllEntitiesDrawn()) continue;//Si toutes les entités de la zone ne sont pas dessinés on skip
+        //        v_elements_depth[j]->draw(renderer);//sinon on dessine le bâtiment
+        //        v_elements_depth[j]->isDrawn = true;
+        //    }
+        //}
+        //if (!c->isDrawn)c->draw(renderer);
+
+        //for (Element* e : v_elements_depth)
+        //{
+        //    if (!dynamic_cast<Building*>(e))                       continue;//si pas bâtiment on skip
+        //    if (e->isDrawn)                                        continue;//si déjà dessiné on skip
+        //    if (!dynamic_cast<Building*>(e)->isAllEntitiesDrawn()) continue;//Si toutes les entités de la zone ne sont pas dessinés on skip
+        //    e->draw(renderer);//sinon on dessine le bâtiment
+        //    e->isDrawn = true;
+        //}
+
+//On vérifie qu'on a pas dessiné une entité qui a complété les entités dans la zone d'un bâtiment
+//for (int j = 0; j < i; j++)// < i pour pas tester et dessiner des buildings plus loin dans la liste qui sont empty
+//{
+//    if (!dynamic_cast<Building*>(v_elements_depth[j]))                       continue;//si pas bâtiment on skip
+//    if (v_elements_depth[j]->isDrawn)                                        continue;//si déjà dessiné on skip
+//    if (dynamic_cast<Building*>(v_elements_depth[j])->entities.size() == 0)  continue;//S'il n'y a pas d'entité dedans on skip car ça aurait déjà été dessiné avant
+//    if (!dynamic_cast<Building*>(v_elements_depth[j])->isAllEntitiesDrawn()) continue;//Si toutes les entités de la zone ne sont pas dessinés on skip
+//    v_elements_depth[j]->draw(renderer);//sinon on dessine le bâtiment
+//    v_elements_depth[j]->isDrawn = true;
+//}
+
+        
+        //for (Element* e : v_elements_depth)
+        //{
+        //    if (!dynamic_cast<Building*>(e))                       continue;//si pas bâtiment on skip
+        //    if (e->isDrawn)                                        continue;//si déjà dessiné on skip
+        //    if (dynamic_cast<Building*>(e)->entities.size() == 0)  continue;//S'il n'y a pas d'entité dedans on skip car ça aurait déjà été dessiné avant
+        //    if (!dynamic_cast<Building*>(e)->isAllEntitiesDrawn()) continue;//Si toutes les entités de la zone ne sont pas dessinés on skip
+        //    e->draw(renderer);//sinon on dessine le bâtiment
+        //    e->isDrawn = true;
+        //}
 
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
 
+        for(auto it = entities.begin(); it != entities.end(); ++it)
+            if(it->second) draw_circle(renderer, it->second->getXMovebox() + 5 * it->second->getSpeed() * it->second->getXRate() * it->second->getDeltaTime(), it->second->getYMovebox() + 5 * it->second->getSpeed() * it->second->getYRate() * it->second->getDeltaTime(), 10);
         draw_circle(renderer, c->getXMovebox() + 5 * c->getSpeed() * c->getXRate() * c->getDeltaTime(), c->getYMovebox() + 5 * c->getSpeed() * c->getYRate() * c->getDeltaTime(), 10);
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
@@ -439,14 +519,8 @@ void t_move_players()
                     else                              e_cast->resetStep();
             }
         }
-        sort(v_elements[1].begin(), v_elements[1].end(), compareZ);
-        //if (entities[0] && entities[1]) cout << entities[0]->getY() << " : " << entities[1]->getY() << endl;
-        for (Element* e : v_elements_depth) cout << e->getY() << " : ";
-        cout << endl;
         mtx.unlock();
         SDL_Delay(1);
-
-
     }
 }
 

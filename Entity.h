@@ -70,8 +70,7 @@ class Entity : public Element
 		SDL_Texture* getTexture()		  { return text[animationID][dir][step / ANIMATIONMULTIPL];			  }
 		float getDeltaTime() { return this->deltaTime; } //pour debug
 		float getXChange() { return this->xChange; }
-		float getYChange() { return this->yChange; }
-		
+		float getYChange() { return this->yChange; }		
 
 
 		void increaseX()					 { this->x++; this->pos.x = x;							  }
@@ -101,7 +100,6 @@ class Entity : public Element
 
 		short countDir;
 		bool up = false, right = false, down = false, left = false;
-
 
 		bool isInClickRange(int x, int y) { return (abs(this->xMovebox - x) + abs(this->yMovebox - y)) < 100; }
 		bool isInFront(int x, int y) override;
