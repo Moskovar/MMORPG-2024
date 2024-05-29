@@ -30,7 +30,7 @@ namespace uti {
 	};
 
 	struct NetworkEntity {
-		short id = 0, countDir = 0;
+		short id = 0, countDir = 0, hp = 0;
 		int xMap = 0, yMap = 0;
 		uint64_t timestamp; // En microsecondes depuis l'epoch
 	};

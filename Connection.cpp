@@ -78,10 +78,11 @@ void Connection::sendNETCP(uti::NetworkEntity ne)
         std::cerr << "Invalid TCP socket." << std::endl;
         return;
     }
-    ne.id = htons(ne.id);
-    ne.countDir = htons(ne.countDir);
-    ne.xMap = htonl(ne.xMap);
-    ne.yMap = htonl(ne.yMap);
+    ne.id        = htons(ne.id);
+    ne.countDir  = htons(ne.countDir);
+    ne.hp        = htons(ne.hp);
+    ne.xMap      = htonl(ne.xMap);
+    ne.yMap      = htonl(ne.yMap);
     ne.timestamp = htonll(ne.timestamp);
     int iResult = ::send(tcpSocket, (const char*)&ne, sizeof(ne), 0);
     if (iResult == SOCKET_ERROR) {
@@ -138,9 +139,10 @@ bool Connection::recvNETCP(uti::NetworkEntity& ne, SDL_bool& run)
 
         ne.id       = ntohs(ne.id);
         ne.countDir = ntohs(ne.countDir);
-        ne.xMap = ntohl(ne.xMap);
-        ne.yMap = ntohl(ne.yMap);
-        cout << "Received: " << ne.id << " : " << ne.xMap << " : " << ne.yMap << endl;
+        ne.hp       = ntohs(ne.hp);
+        ne.xMap     = ntohl(ne.xMap);
+        ne.yMap     = ntohl(ne.yMap);
+        cout << "Received: " << ne.id << " : " << ne.hp << " : " << ne.xMap << " : " << ne.yMap << endl;
     }
 
     return true;

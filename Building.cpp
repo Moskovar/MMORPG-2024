@@ -80,7 +80,7 @@ void Building::getEntitiesInArea(const map<int, Entity*>& entities)
     {
         if (it->second && isInFront(it->second->getXMovebox(), it->second->getYMovebox())) this->entities.push_back(it->second);//isMoveBoxInArea(it->second->getXMovebox(), it->second->getYMovebox())
     }
-    cout << this->entities.size() << endl;
+    //cout << this->entities.size() << endl;
 }
 
 void Building::draw(SDL_Renderer* renderer)

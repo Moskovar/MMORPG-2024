@@ -37,12 +37,11 @@ class Entity : public Element
 		virtual void draw(SDL_Renderer* renderer) = 0;
 
 		void move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime);
-		void moveNetworkEntity(vector<Element*>& v_elements, float& deltaTime);
 
 		Spell* getSpell(int i)			  { return spells[i];												  }
 		Pseudo		 getPseudo()          { return this->pseudo;											  }
 		float		 getPseudoX()         { return this->x + 125 - this->pseudo.getWidth() / 2;			      }
-		float		 getPseudoY()         { return this->y + 35;											  }
+		float		 getPseudoY()         { return this->y + 15;											  }
 		string		 getCategory()        { return uti::categories[uti::Language::FR][uti::Category::PLAYER]; }
 		short		 getStep()            { return this->step / ANIMATIONMULTIPL;							  }
 		short		 getFlatStep()		  { return this->step;												  }
@@ -68,11 +67,15 @@ class Entity : public Element
 		bool		 getCancelAA()        { return cancelAA;												  }
 		SDL_Texture* getPortraitTexture() { return textPortrait;											  }
 		SDL_Texture* getTexture()		  { return text[animationID][dir][step / ANIMATIONMULTIPL];			  }
-		float getDeltaTime() { return this->deltaTime; } //pour debug
-		float getXChange() { return this->xChange; }
-		float getYChange() { return this->yChange; }		
+		float getDeltaTime()			  { return this->deltaTime;											  } //pour debug
+		float getXChange()				  { return this->xChange;											  }
+		float getYChange()				  { return this->yChange;											  }	
+		short getHealth() { return this->health; }
 
 
+		void setHealth(int health);
+		void takeDamages(short dmg);
+		void updateRBars();
 		void increaseX()					 { this->x++; this->pos.x = x;							  }
 		void increaseStep()					 { step++;												  }
 		void resetStep()					 { step = 0;											  }
@@ -96,7 +99,7 @@ class Entity : public Element
 		void setPos(float x, float y);
 
 		//--- Méthode pour la NetworkEntity ---//
-		uti::NetworkEntity getNE() { return {id, countDir, (int)xMap * 100, (int)yMap * 100, uti::getCurrentTimestamp() }; }
+		uti::NetworkEntity getNE() { return {id, countDir, health, (int)xMap * 100, (int)yMap * 100, uti::getCurrentTimestamp() }; }
 
 		short countDir;
 		bool up = false, right = false, down = false, left = false;
@@ -106,11 +109,20 @@ class Entity : public Element
 		bool check_collisions(int x, int y) override;
 
 	protected:
-		short id = 0;
+		short id = 0, health = 0;
 
 		Pseudo pseudo;
 		SDL_Surface* imgPortrait  = nullptr;
 		SDL_Texture* textPortrait = nullptr;
+
+		SDL_Surface* imgBar		   = nullptr;
+		SDL_Texture* textBar	   = nullptr;
+		SDL_Surface* imgHealth	   = nullptr;
+		SDL_Texture* textHealth    = nullptr;
+		SDL_Surface* imgRessource  = nullptr;
+		SDL_Texture* textRessource = nullptr;
+
+		SDL_Rect posBarH = { 0, 0, 0, 0 }, posBarR = { 0, 0, 0, 0 }, posHealth = { 0, 0, 0, 0 }, posRessource = { 0, 0, 0, 0 };
 
 		float deltaTime = 0;//a delete pour debug avec la position anticipée
 		float xChange = 0, yChange = 0;

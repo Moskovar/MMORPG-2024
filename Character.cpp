@@ -19,11 +19,15 @@ void Character::resetPos()
 
     updateMovebox();
     updateClickBox();
+    updateRBars();
 }
 
 void Character::draw(SDL_Renderer* renderer)
 {
 	//pseudo.draw(renderer, getPseudoX(), getPseudoY());
-	pseudo.draw(renderer, getPseudoX(), getPseudoY());
+    pseudo.draw(renderer, getPseudoX(), getPseudoY());
+    updateRBars();
+    SDL_RenderCopy(renderer, textHealth, NULL, &posHealth);
+    SDL_RenderCopy(renderer, textBar, NULL, &posBarH);
 	SDL_RenderCopy(renderer, text[animationID][dir][step / ANIMATIONMULTIPL], NULL, &this->pos);
 }

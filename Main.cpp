@@ -68,6 +68,7 @@ void t_receive_data_TCP();
 void applyInitialOffset(Entity* e);
 void updateNetworkPlayer(Entity* e, const uti::NetworkEntity& ne);
 void moveNetworkEntity(Entity* e);
+void applyDamages(short dmg);
 
 int main(int argc, char* argv[])
 {
@@ -113,15 +114,17 @@ int main(int argc, char* argv[])
     SDL_RenderPresent(renderer);
 
     //cout << ne.id << " : " << ne.countDir << " : " << ne.x << " : " << ne.y << " : " << ne.timestamp << endl;
-        
+
     float posx = ne.xMap / 100, posy = ne.yMap / 100;
     int rowMap = posy / 1080, colMap = posx / 1920;
     initialXOffset = width / 2 - 125 - ((int)posx % 1920);
     initialYOffset = height / 2 - 125 - ((int)posy % 1080);
     c = new Warrior("Titus", posx, posy, ne.id, uti::Category::PLAYER, renderer);
+    c->setHealth(ne.hp);
     entities[ne.id] = c;
     c->setXYMap(posx, posy);
     NPC npc("DENT", 2780, 1440, -1, uti::Category::NPC, "character/warrior", false, dynamic_cast<Character*>(c), renderer);
+    entities[-1] = &npc;
     ui = new UI(window, renderer, c);
     
     //qb.addQuest(new Quest("First quest", "First quest in the world", 100, window, renderer));
@@ -156,7 +159,7 @@ int main(int argc, char* argv[])
     MapFragment* mf6 = new MapFragment("enchantedforest", renderer, {});
     m.addFragment(1, 3, mf6);
 
-    MapFragment* mf7 = new MapFragment("grass", renderer, { new Building(0, 0, 1000, 672, renderer, "tavern/tavern") });
+    MapFragment* mf7 = new MapFragment("grass", renderer, { new Building(-375, -500, 1920, 1080, renderer, "houses/house1"), new Building(1024, 0, 1000, 672, renderer, "tavern/tavern")});
     m.addFragment(1, 1, mf7);
     MapFragment* mf8 = new MapFragment("grass", renderer,  {});
     m.addFragment(1, 2, mf8);           
@@ -190,10 +193,9 @@ int main(int argc, char* argv[])
 
     v_elements_solid = m.getElements(true);
     v_elements_depth = m.getElements(false);
-    v_elements_depth.push_back(&npc);
-    cout << "Size: " << v_elements_depth.size() << endl;
     v_elements_depth.push_back(c);
-    cout << "Size: " << v_elements_depth.size() << endl;
+    v_elements_depth.push_back(&npc);
+    
 
     sort(v_elements_depth.begin(), v_elements_depth.end(), compareZ);
 
@@ -215,18 +217,8 @@ int main(int argc, char* argv[])
     SDL_SetWindowGrab(window, SDL_TRUE);
     //SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
     SDL_Event events;
-    //thread t_handleKeyEvents(t_run_handleKeyEvents);
-    Uint32 startTime;
-    int frameTime;
-    //c->setMoving(true);
-    //c->countDir += uti::Direction::LEFT;  c->left = true;  c->update();
-    //cameraLock = true;
     while (run)
     {
-        startTime = SDL_GetTicks();
-        sort(v_elements_depth.begin(), v_elements_depth.end(), compareZ);
-        //for (Element* e : v_elements_depth) cout << e->getY() << " ";
-        //cout << endl;
         while (SDL_PollEvent(&events))
         {
             switch (events.type)
@@ -245,6 +237,8 @@ int main(int argc, char* argv[])
                     //--- Caméra ---//
                     if (events.key.keysym.sym == SDLK_SPACE) { cameraLock = true;        resetAllElementsPos(); c->updateMovebox(); }
                     if (events.key.keysym.sym == SDLK_y)     { cameraLock = !cameraLock; resetAllElementsPos(); c->updateMovebox(); }
+                    if (events.key.keysym.sym == SDLK_r) applyDamages(5);
+                    if (events.key.keysym.sym == SDLK_t) applyDamages(-5);
                     break;
                 case SDL_KEYUP: // Un événement de type touche relâchée est effectué
                     //--- Quitter le jeu ---//
@@ -274,103 +268,38 @@ int main(int argc, char* argv[])
         }
       
         mtx.lock();
-        //cout << "render lock" << endl;
         SDL_RenderClear(renderer);
-        //mf->draw(renderer);
         m.draw(renderer);
 
-        //pas efficace avec tous les joueurs...
-        for(Element* e : v_elements_depth)
-        {
-            if (!dynamic_cast<Building*>(e)) continue;
-            if (dynamic_cast<Building*>(e)) dynamic_cast<Building*>(e)->getEntitiesInArea(entities);
-            sort(dynamic_cast<Building*>(e)->entities.begin(), dynamic_cast<Building*>(e)->entities.end(), compareZ);
-            for (Entity* entity : dynamic_cast<Building*>(e)->entities)
-            {
-                entity->draw(renderer);
-                entity->isDrawn = true;
-            }
-            dynamic_cast<Building*>(e)->draw(renderer);
-        }
+        sort(v_elements_depth.begin(), v_elements_depth.end(), compareZ);
 
-        //cout << "C: " << c->isDrawn << endl;
+        //pas efficace avec tous les joueurs...
+        for (Element* e : v_elements_depth)
+        {
+            if (dynamic_cast<Building*>(e))
+            {
+                dynamic_cast<Building*>(e)->getEntitiesInArea(entities);
+                sort(dynamic_cast<Building*>(e)->entities.begin(), dynamic_cast<Building*>(e)->entities.end(), compareZ);
+            }
+        }
 
         for (Element* e : v_elements_depth)
         {
-            if (dynamic_cast<Entity*>(e) && !dynamic_cast<Entity*>(e)->isDrawn) { cout << dynamic_cast<Entity*>(e)->getPseudo().getFont().getText() << endl; e->draw(renderer); }
+            if (dynamic_cast<Entity*>(e) && !e->isDrawn) { e->draw(renderer); e->isDrawn = true; }
+            for (Element* e2 : v_elements_depth)
+            {
+                if (!dynamic_cast<Building*>(e2)) continue;
+                if (!dynamic_cast<Building*>(e2)->isAllEntitiesDrawn()) break;
+                if(!e2->isDrawn)
+                {
+                    e2->draw(renderer);
+                    e2->isDrawn = true;
+                }
+
+            }
         }
-       
-        //cout << "C: " << c->isDrawn << endl;
+
         for (Element* e : v_elements_depth) e->isDrawn = false;
-
-        //c->isDrawn = false;
-        //for (int i = 0; i < v_elements_depth.size(); i++)
-        //{
-        //    Element* e = v_elements_depth[i];
-        //    if (i != 0 && dynamic_cast<Building*>(e)) continue;
-
-        //    if (!c->isDrawn)//si le joueur n'est pas dessiné
-        //    {
-        //        if (!e->isInFront(c->getXMovebox(), c->getYMovebox()))//si l'élément n'est pas devant le joueur, on dessine l'élément
-        //        {
-        //            e->draw(renderer);
-        //            e->isDrawn = true;
-        //        }
-        //        else//si l'élément est devant le joueur, on dessine le joueur puis on dessine l'élément
-        //        {
-        //            c->draw(renderer);
-        //            c->isDrawn = true;
-        //            e->draw(renderer);
-        //            e->isDrawn = true;
-        //        }
-        //    }
-        //    else//Si le joueur est dessiné
-        //    {   
-        //            e->draw(renderer);
-        //            e->isDrawn = true;
-        //    }
-
-        //    for (int j = 0; j < i; j++)// < i pour pas tester et dessiner des buildings plus loin dans la liste qui sont empty
-        //    {
-        //        if (!dynamic_cast<Building*>(v_elements_depth[j]))                       continue;//si pas bâtiment on skip
-        //        if (v_elements_depth[j]->isDrawn)                                        continue;//si déjà dessiné on skip
-        //        if (!dynamic_cast<Building*>(v_elements_depth[j])->isAllEntitiesDrawn()) continue;//Si toutes les entités de la zone ne sont pas dessinés on skip
-        //        v_elements_depth[j]->draw(renderer);//sinon on dessine le bâtiment
-        //        v_elements_depth[j]->isDrawn = true;
-        //    }
-        //}
-        //if (!c->isDrawn)c->draw(renderer);
-
-        //for (Element* e : v_elements_depth)
-        //{
-        //    if (!dynamic_cast<Building*>(e))                       continue;//si pas bâtiment on skip
-        //    if (e->isDrawn)                                        continue;//si déjà dessiné on skip
-        //    if (!dynamic_cast<Building*>(e)->isAllEntitiesDrawn()) continue;//Si toutes les entités de la zone ne sont pas dessinés on skip
-        //    e->draw(renderer);//sinon on dessine le bâtiment
-        //    e->isDrawn = true;
-        //}
-
-//On vérifie qu'on a pas dessiné une entité qui a complété les entités dans la zone d'un bâtiment
-//for (int j = 0; j < i; j++)// < i pour pas tester et dessiner des buildings plus loin dans la liste qui sont empty
-//{
-//    if (!dynamic_cast<Building*>(v_elements_depth[j]))                       continue;//si pas bâtiment on skip
-//    if (v_elements_depth[j]->isDrawn)                                        continue;//si déjà dessiné on skip
-//    if (dynamic_cast<Building*>(v_elements_depth[j])->entities.size() == 0)  continue;//S'il n'y a pas d'entité dedans on skip car ça aurait déjà été dessiné avant
-//    if (!dynamic_cast<Building*>(v_elements_depth[j])->isAllEntitiesDrawn()) continue;//Si toutes les entités de la zone ne sont pas dessinés on skip
-//    v_elements_depth[j]->draw(renderer);//sinon on dessine le bâtiment
-//    v_elements_depth[j]->isDrawn = true;
-//}
-
-        
-        //for (Element* e : v_elements_depth)
-        //{
-        //    if (!dynamic_cast<Building*>(e))                       continue;//si pas bâtiment on skip
-        //    if (e->isDrawn)                                        continue;//si déjà dessiné on skip
-        //    if (dynamic_cast<Building*>(e)->entities.size() == 0)  continue;//S'il n'y a pas d'entité dedans on skip car ça aurait déjà été dessiné avant
-        //    if (!dynamic_cast<Building*>(e)->isAllEntitiesDrawn()) continue;//Si toutes les entités de la zone ne sont pas dessinés on skip
-        //    e->draw(renderer);//sinon on dessine le bâtiment
-        //    e->isDrawn = true;
-        //}
 
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
 
@@ -387,14 +316,8 @@ int main(int argc, char* argv[])
         //--------------//
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderPresent(renderer);
-
-        frameTime = SDL_GetTicks() - startTime;
-
         mtx.unlock();
-        SDL_Delay(1);
-
-        //cout << "MAJ" << endl;
-        //cout << SDL_GetTicks() - startTime << endl;
+        SDL_Delay(8);
     }
 
     if(t_player.joinable())  t_player.join();
@@ -418,15 +341,6 @@ int main(int argc, char* argv[])
         delete c;
         c = nullptr;
     }
-
-    //for (auto it = entities.begin(); it != entities.end(); ++it)//pour être sûr que c'est bien clean
-    //{
-    //    if (it->second)
-    //    {
-    //        delete it->second;
-    //        it->second = nullptr;
-    //    }
-    //}
 
     return 0;
 }
@@ -453,6 +367,7 @@ void t_move_player()
         //co.sendNEUDP(ne);
         Sleep(1);
     }
+    run = SDL_FALSE;
 }
 
 void t_move_players()
@@ -560,7 +475,7 @@ void t_receive_data_udp()
 void t_receive_data_TCP()
 {
 
-    uti::NetworkEntity ne = { 0, 0, 0, 0, 0 };
+    uti::NetworkEntity ne = { 0, 0, 0, 0, 0, 0 };
     while (run)
     {
         if (co.recvNETCP(ne, run) && run) cout << "TCP NE received: " << ne.id << " : " << (float)ne.xMap / 100 << " : " << (float)ne.yMap / 100 << " : " << ne.timestamp << endl;//pour le debug
@@ -631,6 +546,7 @@ void applyInitialOffset(Entity* e)//useless af ?? use updateNetworkPlayer instea
 void updateNetworkPlayer(Entity* e, const uti::NetworkEntity& ne)
 {
     e->setXYMap((float)ne.xMap / 100, (float)ne.yMap / 100);
+    e->setHealth(ne.hp);
     e->setX(c->getX() - (c->getXMap() - e->getXMap()));
     e->setY(c->getY() - (c->getYMap() - e->getYMap()));
     e->countDir = ne.countDir;
@@ -641,6 +557,12 @@ void updateNetworkPlayer(Entity* e, const uti::NetworkEntity& ne)
 void moveNetworkEntity(Entity* e)
 {
 
+}
+
+void applyDamages(short dmg)
+{
+    c->takeDamages(dmg);
+    co.sendNETCP(c->getNE());
 }
 
 void t_run_screenMsg()
@@ -714,7 +636,7 @@ void t_update_camera()
                 for (Element* e : v)
                 {
                     e->updateXOffset(-c->getXChange());
-                    if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                    if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); dynamic_cast<Entity*>(e)->updateRBars(); }
                 }
             m.updateXOffset(-c->getXChange());
             //cout << -c->getXChange() << endl;

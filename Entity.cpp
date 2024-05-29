@@ -12,6 +12,7 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, int category, s
     this->pseudo = Pseudo(name, renderer);
 
     this->id       = id;
+    this->health   = 100;
     this->category = category;
     this->step     = 0;
     this->speed    = 400;
@@ -27,9 +28,27 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, int category, s
     this->xRate = 0;
     this->yRate = 0;
 
+    posBarH.x = pos.x;
+    posBarH.y = pos.y;
+    posBarH.w = 100;
+    posBarH.h = 10;
+    posHealth.h = 10;
+
     imgPortrait = IMG_Load(string("img/entity/" + imgSrc + "/picture/head.png").c_str());
     if (imgPortrait) textPortrait = SDL_CreateTextureFromSurface(renderer, imgPortrait);
-    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> portrait.png");   exit(0); }
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> portrait.png"); exit(0); }
+
+    SDL_Surface* imgBar = IMG_Load(string("img/ui/ressources/bar.png").c_str());
+    if (imgBar) textBar = SDL_CreateTextureFromSurface(renderer, imgBar);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> bar.png");      exit(0); }
+
+    SDL_Surface* imgHealth = IMG_Load(string("img/ui/ressources/health.png").c_str());
+    if (imgHealth) textHealth = SDL_CreateTextureFromSurface(renderer, imgHealth);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> health.png");   exit(0); }
+
+    SDL_Surface* imgRessource = IMG_Load(string("img/ui/ressources/mana.png").c_str());
+    if (imgRessource) textRessource = SDL_CreateTextureFromSurface(renderer, imgRessource);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> mana.png");     exit(0); }
 
     string src = "";
     for (float i = 0; i < 4; i += 0.5)
@@ -75,6 +94,7 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, int category, s
 
     updateMovebox();
     updateClickBox();
+    updateRBars();
 }
 
 Entity::~Entity()
@@ -129,6 +149,7 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
         }
     }
 
+    updateRBars();
     updateMovebox();
     updateClickBox();
 
@@ -164,6 +185,53 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
 bool Entity::inClickBox(int x, int y)
 {
     return x > clickBox.x && x < clickBox.x + clickBox.w && y > clickBox.y && y < clickBox.y + clickBox.h;
+}
+
+void Entity::setHealth(int health)
+{ 
+    this->health = health;	
+    posHealth.w = health;	
+    if (health <= 0) 
+    { 
+        health = 0; 
+        alive = false;
+    } 
+    else if (health > 100)
+    {
+        health = 100;
+    }
+}
+
+void Entity::takeDamages(short dmg)
+{
+    this->health -= dmg;     
+    posHealth.w = health;	
+    if (health <= 0) 
+    { 
+        health = 0; 
+        alive = false; 
+    }
+    else if (health > 100)
+    {
+        health = 100;
+    }
+}
+
+void Entity::updateRBars()
+{
+    if (this->y > -50)
+    {
+        posBarH.y = this->pos.y + 40;
+        posHealth.y = this->pos.y + 40;
+    }
+    else
+    {
+        posBarH.y = this->pos.y + 200;
+        posHealth.y = this->pos.y + 200;
+    }
+
+    posBarH.x = this->pos.x + 75;
+    posHealth.x = this->pos.x + 75;
 }
 
 void Entity::update()
