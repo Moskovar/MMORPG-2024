@@ -3,6 +3,9 @@
 
 Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
 {
+    moving = true;
+    boostSpeed = 2;
+
     string src = "";
     for (float i = 0; i < 4; i += 0.5)
     {
@@ -18,71 +21,55 @@ Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
 
             if (img[i][j]) text[i][j] = SDL_CreateTextureFromSurface(renderer, img[i][j]);
             else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, std::string("Failed to load image: " + src).c_str()); exit(0); }
-
         }
     }
 }
 
-void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& self, Entity* enemy, Map* m, bool& cameraLock, mutex* mtx)
+void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& player, Entity* enemy)
 {
-    Uint32 lastTime = SDL_GetTicks64();
-    Uint32 currentTime;
-    float deltaTime;
-    self.setSpellActive(true);
-    self.setAnimationID(animationID);
-    self.setStep(0);
-    int step = 0;
-    for (int i = 0; i < 100; i++)
-    {   
-        currentTime = SDL_GetTicks();
-        deltaTime = (currentTime - lastTime) / 1000.0f; // Convert to seconds
-        lastTime = currentTime;
-        mtx->lock();
-        self.setStep((i % 20) * self.getANIMATIONMULTIPL());
-
-        float xChange = self.getSpeed() * uti::pixDir[self.getDir()].xRate * deltaTime,
-              yChange = self.getSpeed() * uti::pixDir[self.getDir()].yRate * deltaTime;
-
-        self.setXChange(xChange);
-        self.setYChange(yChange);
-        
-        bool collision = false;
-        for (Element* b : v_elements_solid) if (b->check_collisions(self.getXMovebox() + xChange, self.getYMovebox() + yChange)) { collision = true; break; }
-        if (!collision)
-        {
-            for (unsigned int i = 0; i < v_elements.size(); i++)
-            {
-                v_elements[i]->addXOffset(-xChange);
-                v_elements[i]->addYOffset(-yChange);
-            }
-
-            m->addOffset(-xChange, -yChange);
-
-            if (!cameraLock)
-            {
-                self.addX(xChange);
-                self.addY(yChange);
-
-                self.addXOffset(-xChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
-                self.addYOffset(-yChange);//On déplace le personnage dans un sens et le offset dans l'autre pour faire le reset de la pos
-            }
-            else
-            {
-                for (Element* e : v_elements) e->resetPos();//applique le offset aux elements du décors
-                m->resetPos();
-            }
-
-            self.addXMap(xChange);
-            self.addYMap(yChange);
-        }
-        self.updateMovebox();
-        self.updateClickBox();
-        mtx->unlock();
-        Sleep(5);
+    if (!player.isSpellActive())
+    {
+        cout << "OK START" << endl;
+        player.setSpellActive(true);
+        player.setAnimationID(animationID);
+        player.setAnimationSpeed(20);
     }
-    if (self.isMoving()) self.setAnimationID(1);
-    else          self.setAnimationID(0);
-    self.setStep(0);
-    self.setSpellActive(false);
-    self.setCancelAA(false);
+
+    step++;
+    player.setStep((step % 20) * player.getAnimationSpeed());
+    if (step % 20 == 0) cout << player.getAnimationID() << endl;//cout << player.getDir() << " : " << step << endl;
+
+    if (step == 500)
+    {
+        step = 0;
+        player.setStep(0);
+        player.setSpell();
+        player.setSpellActive(false);
+        player.setCancelAA(false);
+        player.setAnimationSpeed(15);
+    }
+}
+
+void Whirlwind::runOthers(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& player, Entity* enemy)
+{
+    if (!player.isSpellActive())
+    {
+        cout << "OK START" << endl;
+        player.setSpellActive(true);
+        player.setAnimationID(animationID);
+        player.setAnimationSpeed(20);
+    }
+
+    step++;
+    player.setStep((step % 20) * player.getAnimationSpeed());
+    if (step % 20 == 0) cout << player.getAnimationID() << endl;//cout << player.getDir() << " : " << step << endl;
+}
+
+void Whirlwind::resetSpell(Entity& player)
+{
+    step = 0;
+    player.setStep(0);
+    player.setSpellActive(false);
+    player.setCancelAA(false);
+    player.setAnimationSpeed(15);
 }

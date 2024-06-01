@@ -86,7 +86,8 @@ int main(int argc, char* argv[])
     }
 
     uti::NetworkEntity ne = { 0, 0, 0, 0, 0 };
-    co.recvNETCP(ne, run);
+    uti::NetworkEntitySpell nes = {};
+    co.recvTCP(ne, nes, run);
     if (ne.id == -1) { cout << "Le serveur est plein" << endl; exit(1); }//changer avec une fermeture prope du socket ??
 
     //if (SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1") == SDL_FALSE) {
@@ -159,10 +160,10 @@ int main(int argc, char* argv[])
     MapFragment* mf6 = new MapFragment("enchantedforest", renderer, {});
     m.addFragment(1, 3, mf6);
 
-    MapFragment* mf7 = new MapFragment("grass", renderer, { new Building(-375, -500, 1920, 1080, renderer, "houses/house1"), new Building(1024, 0, 1000, 672, renderer, "tavern/tavern")});
+    MapFragment* mf7 = new MapFragment("grass", renderer, { new Building(-375, -500, 1920, 1080, renderer, "houses/house1")});
     m.addFragment(1, 1, mf7);
     MapFragment* mf8 = new MapFragment("grass", renderer,  {});
-    m.addFragment(1, 2, mf8);           
+    m.addFragment(1, 2, mf8);
     MapFragment* mf9 = new MapFragment("grass", renderer,  {});
     m.addFragment(2, 1, mf9);
     MapFragment* mf10 = new MapFragment("grass", renderer, {});
@@ -231,8 +232,9 @@ int main(int argc, char* argv[])
                     if (events.key.keysym.sym == SDLK_s) { if (!c->down)  { c->countDir += uti::Direction::DOWN;  c->down = true;  c->update(); co.sendNETCP(c->getNE()); } }
                     if (events.key.keysym.sym == SDLK_q) { if (!c->left)  { c->countDir += uti::Direction::LEFT;  c->left = true;  c->update(); co.sendNETCP(c->getNE()); } }
                     //--- Spells ---//
-                    if (events.key.keysym.sym == SDLK_a) { if (!c->isSpellActive()) { c->setCancelAA(true); if (!c->isSpellActive()) { if (t_spell.joinable()) t_spell.join(); t_spell = thread(t_run_spell, c->getSpell(1), nullptr); } } }
-                    if (events.key.keysym.sym == SDLK_e) { if (!c->isSpellActive()) { if (!c->isAAActive()) { if (t_aa.joinable()) t_aa.join(); t_aa = thread(t_run_aa, dynamic_cast<AutoAttack*>(c->getSpell(0)), nullptr); } } }
+                    if (events.key.keysym.sym == SDLK_a) { if (!c->isSpellActive()) { c->setCancelAA(true); if (!c->isSpellActive()) { c->setSpell(Whirlwind::id);  co.sendNESTCP(c->getNES(Whirlwind::id)); } } }
+                    if (events.key.keysym.sym == SDLK_e) { if (!c->isSpellActive()) { if (!c->isAAActive()) { c->setSpell(AutoAttack::id); co.sendNETCP(c->getNE()); } } }
+                    if (events.key.keysym.sym == SDLK_y) {  }
 
                     //--- Caméra ---//
                     if (events.key.keysym.sym == SDLK_SPACE) { cameraLock = true;        resetAllElementsPos(); c->updateMovebox(); }
@@ -350,7 +352,7 @@ void t_move_player()
     Uint32 lastTime = SDL_GetTicks64();
     Uint32 currentTime;
     float deltaTime;
-    uti::NetworkEntity ne = { 0, 0, 0 };//??
+    bool sendSpellData = false;
     
     while (c->isAlive())
     {
@@ -359,12 +361,9 @@ void t_move_player()
         lastTime = currentTime;
         //cout << v_elements_solid.size() << endl;
         mtx.lock();
-        if (c->isMoving() && !c->isSpellActive()) { c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime); }
+        c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime, sendSpellData);
         mtx.unlock();
-        //cout << c->getXMap() << " : " << c->getYMap() << endl;
-        //ne.x = c->getXMap() * 100;
-        //ne.y = c->getYMap() * 100;
-        //co.sendNEUDP(ne);
+        if (sendSpellData) { co.sendNETCP(c->getNE()); co.sendNESTCP(c->getNES(0)); sendSpellData = false; }
         Sleep(1);
     }
     run = SDL_FALSE;
@@ -387,13 +386,21 @@ void t_move_players()
             if (dynamic_cast<Entity*>(e))
             {
                 Entity* e_cast = dynamic_cast<Entity*>(e);
-
+                //if(e_cast->getSpellUsed()) cout << e_cast->getSpellUsed()->getID() << endl;
+                //if (e_cast->isSpellActive()) continue;
+                e_cast->update();
                 if (e_cast->getXRate() == 0 && e_cast->getYRate() == 0) { e_cast->resetStep(); continue; }
 
                 bool collision = false;
 
                 float xChange = e_cast->getSpeed() * e_cast->getXRate() * deltaTime,
                       yChange = e_cast->getSpeed() * e_cast->getYRate() * deltaTime;
+
+                if (e_cast->getSpellUsed())
+                {
+                    xChange *= e_cast->getSpellUsed()->getBoostSpeed();
+                    yChange *= e_cast->getSpellUsed()->getBoostSpeed();
+                }
 
                 dir = e_cast->getDir(), step = e_cast->getFlatStep();
 
@@ -408,30 +415,39 @@ void t_move_players()
                     e_cast->updateClickBox();
                 }
 
-                if (dir == 0)
-                    if (step < 9 * ANIMATIONMULTIPL)  e_cast->increaseStep();
-                    else                              e_cast->resetStep();
-                else if (dir == 1)
-                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
-                    else                              e_cast->resetStep();
-                else if (dir == 2)
-                    if (step < 8 * ANIMATIONMULTIPL)  e_cast->increaseStep();
-                    else                              e_cast->resetStep();
-                else if (dir == 3)
-                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
-                    else                              e_cast->resetStep();
-                else if (dir == 0.5)
-                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
-                    else                              e_cast->resetStep();
-                else if (dir == 1.5)
-                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
-                    else                              e_cast->resetStep();
-                else if (dir == 2.5)
-                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
-                    else                               e_cast->resetStep();
-                else if (dir == 3.5)
-                    if (step < 11 * ANIMATIONMULTIPL) e_cast->increaseStep();
-                    else                              e_cast->resetStep();
+                //cout << e_cast->getAnimationID() << endl;
+
+                if (!e_cast->getSpellUsed())
+                {
+                    if (dir == 0)
+                        if (step < 9 * e_cast->getAnimationSpeed())  e_cast->increaseStep();
+                        else                                         e_cast->resetStep();
+                    else if (dir == 1)
+                        if (step < 11 * e_cast->getAnimationSpeed()) e_cast->increaseStep();
+                        else                                         e_cast->resetStep();
+                    else if (dir == 2)
+                        if (step < 8 * e_cast->getAnimationSpeed())  e_cast->increaseStep();
+                        else                                         e_cast->resetStep();
+                    else if (dir == 3)
+                        if (step < 11 * e_cast->getAnimationSpeed()) e_cast->increaseStep();
+                        else                                         e_cast->resetStep();
+                    else if (dir == 0.5)
+                        if (step < 11 * e_cast->getAnimationSpeed()) e_cast->increaseStep();
+                        else                                         e_cast->resetStep();
+                    else if (dir == 1.5)
+                        if (step < 11 * e_cast->getAnimationSpeed()) e_cast->increaseStep();
+                        else                                         e_cast->resetStep();
+                    else if (dir == 2.5)
+                        if (step < 11 * e_cast->getAnimationSpeed()) e_cast->increaseStep();
+                        else                                         e_cast->resetStep();
+                    else if (dir == 3.5)
+                        if (step < 11 * e_cast->getAnimationSpeed()) e_cast->increaseStep();
+                        else                                         e_cast->resetStep();
+                }
+                else
+                {
+                    if (e_cast->getSpellUsed()) e_cast->getSpellUsed()->runOthers(v_elements[1], v_elements_solid, *e_cast, nullptr);
+                }
             }
         }
         mtx.unlock();
@@ -441,7 +457,9 @@ void t_move_players()
 
 void t_run_spell(Spell* spell, Entity* enemy)
 {
-    spell->run(v_elements[1], v_elements_solid, *c, nullptr, &m, cameraLock, &mtx);
+    spell->run(v_elements[1], v_elements_solid, *c, nullptr);
+    //c->setSpell(0);
+    co.sendNETCP(c->getNE());
     if (c->getCountDir() == 0) c->setMoving(false);
 }
 
@@ -449,7 +467,7 @@ void t_run_aa(AutoAttack* spell, Entity* enemy)
 {
     while (!c->getCancelAA())
     {
-        spell->run(v_elements[1], v_elements_solid, *c, nullptr, nullptr, cameraLock, nullptr);
+        spell->run(v_elements[1], v_elements_solid, *c, nullptr);
         if (c->getCountDir() == 0) c->setMoving(false);
         for (int p = 0; p < 1000; p++)
         {
@@ -474,13 +492,17 @@ void t_receive_data_udp()
 
 void t_receive_data_TCP()
 {
+    uti::NetworkEntity ne = { -1, 0, 0, 0, 0, 0 };
+    uti::NetworkEntitySpell nes = { -1, 0, 0 };
 
-    uti::NetworkEntity ne = { 0, 0, 0, 0, 0, 0 };
     while (run)
     {
-        if (co.recvNETCP(ne, run) && run) cout << "TCP NE received: " << ne.id << " : " << (float)ne.xMap / 100 << " : " << (float)ne.yMap / 100 << " : " << ne.timestamp << endl;//pour le debug
+        ne.header  = -1;
+        nes.header = -1;
+        if (co.recvTCP(ne, nes, run) && run);// cout << "TCP NE received: " << ne.id << " : " << (float)ne.xMap / 100 << " : " << (float)ne.yMap / 100 << " : " << ne.timestamp << endl;//pour le debug
         else { run = SDL_FALSE; break;  }
-        if (ne.timestamp == -1)//alors c'est une déconnexion
+        
+        if (ne.header != -1 && ne.timestamp == -1)//alors c'est une déconnexion
         {
             mtx.lock();
             int i_delete = -1, i_delete_depth = -1;
@@ -516,14 +538,26 @@ void t_receive_data_TCP()
             continue;
         }
         
-        if (entities[ne.id])//si le personnage existe alors on le met à jour
+        if (ne.header != -1 && entities[ne.id])//si le personnage existe alors on le met à jour
         {
-            //cout << "UPDATE RECEIVED !!" << endl;
+            mtx.lock();
             updateNetworkPlayer(entities[ne.id], ne);
+            mtx.unlock();
             continue;
         }
-        //pas besoin de tester le pointeur on le teste dans le if d'avant
-        if (/*!entities[ne.id] && */c->getID() != ne.id) //si c'est le personnage du joueur alors il est déjà mis à sa création au début
+        
+        if (nes.header != -1 && entities[nes.id])
+        {
+            mtx.lock();
+            entities[nes.id]->setSpell(nes.spellID);
+            mtx.unlock();
+            if(entities[nes.id]->getSpellUsed()) cout << "SPELL SET TO " << entities[nes.id]->getSpellUsed() << endl;
+            else                                 cout << "SPELL SET TO nullptr" << endl;
+            continue;
+        }
+        
+        //pas besoin de tester le pointeur on le teste dans un if d'avant
+        if (ne.header != -1 && /*!entities[ne.id] && */c->getID() != ne.id) //si c'est le personnage du joueur alors il est déjà mis à sa création au début
         { //connexion on l'ajoute aux listes
             mtx.lock(); 
             entities[ne.id] = new Warrior("Teeta", ne.xMap / 100, ne.yMap / 100, ne.id, uti::Category::PLAYER, renderer);
@@ -550,8 +584,10 @@ void updateNetworkPlayer(Entity* e, const uti::NetworkEntity& ne)
     e->setX(c->getX() - (c->getXMap() - e->getXMap()));
     e->setY(c->getY() - (c->getYMap() - e->getYMap()));
     e->countDir = ne.countDir;
+    if (e->getCountDir() != 0) e->setMoving(true);
+    else                       e->setMoving(false);
+    //e->setSpell(ne.spell);
     e->update();
-    //cout << e->getDir() << " : " << e->countDir << endl;
 }
 
 void moveNetworkEntity(Entity* e)

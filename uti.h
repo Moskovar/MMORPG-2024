@@ -29,11 +29,21 @@ namespace uti {
 		float xRate, yRate;
 	};
 
+#pragma pack(push, 1)
 	struct NetworkEntity {
-		short id = 0, countDir = 0, hp = 0;
-		int xMap = 0, yMap = 0;
+		short header = 0;
+		short id    = 0, countDir = 0, hp = 0;
+		int   xMap  = 0, yMap     = 0;
 		uint64_t timestamp; // En microsecondes depuis l'epoch
 	};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+	struct NetworkEntitySpell {
+		short header = 1;
+		short id = 0, spellID = 0;
+	};
+#pragma pack(pop)
 
 	uint64_t getCurrentTimestamp();
 	

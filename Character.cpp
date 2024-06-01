@@ -29,5 +29,5 @@ void Character::draw(SDL_Renderer* renderer)
     updateRBars();
     SDL_RenderCopy(renderer, textHealth, NULL, &posHealth);
     SDL_RenderCopy(renderer, textBar, NULL, &posBarH);
-	SDL_RenderCopy(renderer, text[animationID][dir][step / ANIMATIONMULTIPL], NULL, &this->pos);
+	SDL_RenderCopy(renderer, text[animationID][dir][step / animationSpeed], NULL, &this->pos);
 }

@@ -19,21 +19,21 @@ class Spell
 {
 
 	public:
-		//Spell() {};
 		Spell(string name);
-		virtual void run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& e, Entity* enemy, Map* m, bool& cameraLock, mutex* mtx) = 0;
+		virtual void run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& player, Entity* enemy) = 0;
+		virtual void runOthers(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& player, Entity* enemy) = 0;
+		virtual void resetSpell(Entity& player) = 0;
 
+		float getBoostSpeed() { return this->boostSpeed; }
+		bool isMoving() { return moving; }
 		map<float, SDL_Surface*[30]>& getImg()  { return img;  }
 		map<float, SDL_Texture*[30]>& getText() { return text; }
 
-		//bool isActive() { return active; }
-
-		//void setActive(bool active) { this->active = active; }
-
 	protected:
-		string name;
-		short step;
-		//bool active;
+		string name = "";
+		short step = 0;
+		float boostSpeed = 1;
+		bool moving = false;
 
 		map<float, SDL_Surface* [30]> img;
 		map<float, SDL_Texture* [30]> text;

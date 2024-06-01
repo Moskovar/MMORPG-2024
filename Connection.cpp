@@ -78,13 +78,31 @@ void Connection::sendNETCP(uti::NetworkEntity ne)
         std::cerr << "Invalid TCP socket." << std::endl;
         return;
     }
+    ne.header    = htons(ne.header);
     ne.id        = htons(ne.id);
     ne.countDir  = htons(ne.countDir);
     ne.hp        = htons(ne.hp);
     ne.xMap      = htonl(ne.xMap);
     ne.yMap      = htonl(ne.yMap);
+    //ne.spell     = htons(ne.spell);
     ne.timestamp = htonll(ne.timestamp);
     int iResult = ::send(tcpSocket, (const char*)&ne, sizeof(ne), 0);
+    if (iResult == SOCKET_ERROR) {
+        std::cerr << "send failed: " << WSAGetLastError() << std::endl;
+    }
+    //std::cout << "Bytes Sent: " << iResult << std::endl;
+}
+
+void Connection::sendNESTCP(uti::NetworkEntitySpell nes)
+{
+    if (tcpSocket == INVALID_SOCKET) {
+        std::cerr << "Invalid TCP socket." << std::endl;
+        return;
+    }
+    nes.header = htons(nes.header);
+    nes.id     = htons(nes.id);
+    nes.spellID = htons(nes.spellID);
+    int iResult = ::send(tcpSocket, (const char*)&nes, sizeof(nes), 0);
     if (iResult == SOCKET_ERROR) {
         std::cerr << "send failed: " << WSAGetLastError() << std::endl;
     }
@@ -108,41 +126,83 @@ void Connection::sendNEUDP(uti::NetworkEntity& ne)
     }
 }
 
-bool Connection::recvNETCP(uti::NetworkEntity& ne, SDL_bool& run)
+bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, SDL_bool& run)
 {
-    fd_set readfds;//structure pour surveiller un ensemble de descripteurs de fichiers pour lire (ici les sockets)
-    timeval timeout;
     int bytesReceived = 0;
     int totalReceived = 0;
     char buffer[512];
 
-    while (totalReceived < sizeof(uti::NetworkEntity))
-    {
+    short header = 0;
 
-        bytesReceived = recv(tcpSocket, buffer + totalReceived, sizeof(uti::NetworkEntity) - totalReceived, 0);
-        if (bytesReceived <= 0)
-        {
+    // Réception du header
+    while (totalReceived < sizeof(header)) {
+        bytesReceived = recv(tcpSocket, ((char*)&header) + totalReceived, sizeof(header) - totalReceived, 0);
+        if (bytesReceived <= 0) {
             int wsaError = WSAGetLastError();
-            if (wsaError == 10035) //socket mode non bloquant n'a rien reçu
-            { 
-                std::this_thread::sleep_for(std::chrono::milliseconds(1)); 
+            if (wsaError == 10035) { // socket en mode non bloquant n'a rien reçu
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 if (!run) break;
-                continue;   
+                continue;
             }
-            cout << "Error receiving msg " << wsaError << endl;
-            // Gestion des erreurs ou de la déconnexion
+            std::cerr << "Error receiving header: " << wsaError << std::endl;
             return false;
         }
-
         totalReceived += bytesReceived;
-        std::memcpy(&ne, buffer, sizeof(uti::NetworkEntity));
+    }
 
-        ne.id       = ntohs(ne.id);
+    // Convertir le header
+    header = ntohs(header);
+    //std::cout << "Header: " << header << std::endl;
+
+    // Copier le header dans le buffer
+    std::memcpy(buffer, &header, sizeof(header));
+
+    // Définir la taille des données en fonction du header
+    unsigned long dataSize = 0;
+    if      (header == 0) dataSize = sizeof(uti::NetworkEntity);
+    else if (header == 1) dataSize = sizeof(uti::NetworkEntitySpell);
+
+    // Réception des données restantes
+    totalReceived = sizeof(header); // Réinitialiser totalReceived pour recevoir les données après le header
+    while (totalReceived < dataSize) {
+        bytesReceived = recv(tcpSocket, buffer + totalReceived, dataSize - totalReceived, 0);
+        if (bytesReceived <= 0) {
+            int wsaError = WSAGetLastError();
+            if (wsaError == 10035) { // socket en mode non bloquant n'a rien reçu
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                if (!run) break;
+                continue;
+            }
+            std::cerr << "Error receiving message: " << wsaError << std::endl;
+            return false;
+        }
+        totalReceived += bytesReceived;
+    }
+
+    if (header == 0)
+    {
+        // Copier les données reçues (y compris le header) dans la structure NetworkEntity
+        std::memcpy(&ne, buffer, dataSize);
+
+        // Convertir les champs en endian correct si nécessaire
+        // ne.header = header; // ne convertissez pas deux fois le header, il est déjà converti
+        ne.id = ntohs(ne.id);
         ne.countDir = ntohs(ne.countDir);
-        ne.hp       = ntohs(ne.hp);
-        ne.xMap     = ntohl(ne.xMap);
-        ne.yMap     = ntohl(ne.yMap);
-        cout << "Received: " << ne.id << " : " << ne.hp << " : " << ne.xMap << " : " << ne.yMap << endl;
+        ne.hp = ntohs(ne.hp);
+        ne.xMap = ntohl(ne.xMap);
+        ne.yMap = ntohl(ne.yMap);
+        // ne.spell    = ntohs(ne.spell);
+
+        //std::cout << "Received: " << ne.id << " : " << ne.hp << " : " << ne.xMap << " : " << ne.yMap << std::endl;
+    }
+    else if (header == 1)
+    {
+        std::memcpy(&nes, buffer, dataSize);
+        //ne.header = header;
+        nes.id      = ntohs(nes.id);
+        nes.spellID = ntohs(nes.spellID);
+
+        cout << "Received H: " << nes.header << " : " << nes.id << " : " << nes.spellID << endl;
     }
 
     return true;

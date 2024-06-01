@@ -84,13 +84,13 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, int category, s
         }
     }
 
-    spells[0] = new AutoAttack(renderer);
-    img[AutoAttack::animationID]  = spells[0]->getImg();
-    text[AutoAttack::animationID] = spells[0]->getText();
+    spells[AutoAttack::id] = new AutoAttack(renderer);
+    img[AutoAttack::animationID]  = spells[AutoAttack::id]->getImg();
+    text[AutoAttack::animationID] = spells[AutoAttack::id]->getText();
 
-    spells[1] = new Whirlwind(renderer);
-    img[Whirlwind::animationID]    = spells[1]->getImg();
-    text[Whirlwind::animationID]   = spells[1]->getText();
+    spells[Whirlwind::id] = new Whirlwind(renderer);
+    img[Whirlwind::animationID]    = spells[Whirlwind::id]->getImg();
+    text[Whirlwind::animationID]   = spells[Whirlwind::id]->getText();
 
     updateMovebox();
     updateClickBox();
@@ -114,10 +114,18 @@ Entity::~Entity()
     std::cout << "Entity: " << pseudo.getFont().getText() << " cleared !" << std::endl;
 }
 
-void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime)
+void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData)
 {
+    if (!moving && (!spellUsed || (spellUsed && !spellUsed->isMoving()))) return;
+
     xChange = speed * xRate * deltaTime,
     yChange = speed * yRate * deltaTime;
+
+    if (spellUsed)
+    {
+        xChange *= spellUsed->getBoostSpeed();
+        yChange *= spellUsed->getBoostSpeed();
+    }
     
     bool collision = false;
 
@@ -153,33 +161,42 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
     updateMovebox();
     updateClickBox();
 
+    //cout << ((spellUsed) ? spellUsed->getID() : 0) << endl;
 
-    if (dir == 0)
-        if (step < 9 * ANIMATIONMULTIPL)  step++;
-        else                                step = 0;
-    else if (dir == 1)
-        if (step < 11 * ANIMATIONMULTIPL) step++;
-        else                                step = 0;
-    else if (dir == 2)
-        if (step < 8 * ANIMATIONMULTIPL)  step++;
-        else                                step = 0;
-    else if (dir == 3)
-        if (step < 11 * ANIMATIONMULTIPL) step++;
-        else                                step = 0;
-    else if (dir == 0.5)
-        if (step < 11 * ANIMATIONMULTIPL) step++;
-        else                                step = 0;
-    else if (dir == 1.5)
-        if (step < 11 * ANIMATIONMULTIPL) step++;
-        else                                step = 0;
-    else if (dir == 2.5)
-        if (step < 11 * ANIMATIONMULTIPL) step++;
-        else                                 step = 0;
-    else if (dir == 3.5)
-        if (step < 11 * ANIMATIONMULTIPL) step++;
-        else                                step = 0;
+    if (!spellUsed)
+    {
+        if (dir == 0)
+            if (step < 9 * animationSpeed)  step++;
+            else                                step = 0;
+        else if (dir == 1)
+            if (step < 11 * animationSpeed) step++;
+            else                                step = 0;
+        else if (dir == 2)
+            if (step < 8 * animationSpeed)  step++;
+            else                                step = 0;
+        else if (dir == 3)
+            if (step < 11 * animationSpeed) step++;
+            else                                step = 0;
+        else if (dir == 0.5)
+            if (step < 11 * animationSpeed) step++;
+            else                                step = 0;
+        else if (dir == 1.5)
+            if (step < 11 * animationSpeed) step++;
+            else                                step = 0;
+        else if (dir == 2.5)
+            if (step < 11 * animationSpeed) step++;
+            else                                 step = 0;
+        else if (dir == 3.5)
+            if (step < 11 * animationSpeed) step++;
+            else                                step = 0;
+    }
+    else
+    {
+        if(spellUsed) spellUsed->run(v_elements, v_elements_solid, *this, nullptr);
+        if (!spellUsed) sendSpellData = true;//si pointeur pas alloué alors on vient de le clear donc spell terminé
+    }
 
-    if (!moving) { step = 0; this->xChange = 0; this->yChange = 0; }
+    update();
 }
 
 bool Entity::inClickBox(int x, int y)
@@ -236,29 +253,40 @@ void Entity::updateRBars()
 
 void Entity::update()
 {
+    bool inAction = spellUsed && spellUsed->isMoving();
+    //if (id == 1) if (spellUsed) cout << "ISMOVING: " << spellUsed->isMoving() << endl;
+    
     switch (countDir)
     {
-        case 0 : xRate =    0; yRate =    0;            moving = false; step = 0; break;
-        case 1 : xRate =    0; yRate =   -1; dir =   0; moving = true;            break;
-        case 3 : xRate =    1; yRate =    0; dir =   1; moving = true;            break;
-        case 6 : xRate =    0; yRate =    1; dir =   2; moving = true;            break;
-        case 11: xRate =   -1; yRate =    0; dir =   3; moving = true;            break;
-        case 4 : xRate =  0.5; yRate = -0.5; dir = 0.5; moving = true;            break;
-        case 7 : xRate =    0; yRate =    0;            moving = false; step = 0; break;
-        case 12: xRate = -0.5; yRate = -0.5; dir = 3.5; moving = true;            break;
-        case 9 : xRate =  0.5; yRate =  0.5; dir = 1.5; moving = true;            break;
-        case 14: xRate =    0; yRate =    0;            moving = false; step = 0; break;
-        case 17: xRate = -0.5; yRate =  0.5; dir = 2.5; moving = true;            break;
-        case 10: xRate =    1; yRate =    0; dir =   1; moving = true;            break;
-        case 15: xRate =    0; yRate =   -1; dir =   0; moving = true;            break;
-        case 18: xRate =   -1; yRate =    0; dir =   3; moving = true;            break;
-        case 20: xRate =    0; yRate =    1; dir =   2; moving = true;            break;
-        case 21: xRate =    0; yRate =    0;            moving = false; step = 0; break;
+        case 0 : xRate =    0; yRate =    0;            if(inAction) break; moving = false; step = 0; break;
+        case 1 : xRate =    0; yRate =   -1; dir =   0; if(inAction) break; moving = true;            break;
+        case 3 : xRate =    1; yRate =    0; dir =   1; if(inAction) break; moving = true;            break;
+        case 6 : xRate =    0; yRate =    1; dir =   2; if(inAction) break; moving = true;            break;
+        case 11: xRate =   -1; yRate =    0; dir =   3; if(inAction) break; moving = true;            break;
+        case 4 : xRate =  0.5; yRate = -0.5; dir = 0.5; if(inAction) break; moving = true;            break;
+        case 7 : xRate =    0; yRate =    0;            if(inAction) break; moving = false; step = 0; break;
+        case 12: xRate = -0.5; yRate = -0.5; dir = 3.5; if(inAction) break; moving = true;            break;
+        case 9 : xRate =  0.5; yRate =  0.5; dir = 1.5; if(inAction) break; moving = true;            break;
+        case 14: xRate =    0; yRate =    0;            if(inAction) break; moving = false; step = 0; break;
+        case 17: xRate = -0.5; yRate =  0.5; dir = 2.5; if(inAction) break; moving = true;            break;
+        case 10: xRate =    1; yRate =    0; dir =   1; if(inAction) break; moving = true;            break;
+        case 15: xRate =    0; yRate =   -1; dir =   0; if(inAction) break; moving = true;            break;
+        case 18: xRate =   -1; yRate =    0; dir =   3; if(inAction) break; moving = true;            break;
+        case 20: xRate =    0; yRate =    1; dir =   2; if(inAction) break; moving = true;            break;
+        case 21: xRate =    0; yRate =    0;            if(inAction) break; moving = false; step = 0; break;
         //default:
     }
 
-    if      (moving == false && animationID == 1) animationID = 0;
-    else if (moving == true && animationID == 0)  animationID = 1;
+    if (inAction)
+    {
+        xRate = uti::pixDir[dir].xRate;
+        yRate = uti::pixDir[dir].yRate;
+    }
+
+    if      (!spellActive && moving == false && animationID != 0) animationID = 0;
+    else if (!spellActive && moving == true && animationID != 1)  animationID = 1;
+
+    //cout << spellActive << " ANIMATIONID: " << animationID << endl;
 }
 
 void Entity::setPos(float xMap, float yMap)
