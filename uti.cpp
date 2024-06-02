@@ -57,4 +57,22 @@ namespace uti {
             return 0; // Format non supporté
         }
     }
+    bool isPointInCircle(const short x, const short y, const short circleCenterX, const short circleCenterY, const short circleRadius)
+    {
+        {
+            float dx = x - circleCenterX;
+            float dy = y - circleCenterY;
+            float distance = std::sqrt(dx * dx + dy * dy);
+            return distance <= circleRadius;
+        }
+    }
+    bool doCirclesIntersect(const Circle& c1, const Circle& c2)
+    {
+        float dx = c2.center.x - c1.center.x;
+        float dy = c2.center.y - c1.center.y;
+        float distance = std::sqrt(dx * dx + dy * dy);
+
+        // Vérifier si les cercles se croisent
+        return (distance <= (c1.radius + c2.radius)) && (distance >= std::abs(c1.radius - c2.radius));
+    }
 }

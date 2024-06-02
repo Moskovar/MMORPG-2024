@@ -52,3 +52,8 @@ void AutoAttack::runOthers(vector<Element*>& v_elements, vector<Element*> v_elem
 void AutoAttack::resetSpell(Entity& player)
 {
 }
+
+bool AutoAttack::isInRange(uti::Circle player, uti::Circle enemy)
+{
+    return false;
+}

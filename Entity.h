@@ -22,7 +22,7 @@ class Entity : public Element
 {
 	public:
 		Entity() {}
-		Entity(std::string name, float x, float y, int id, int category, string src, SDL_Renderer* renderer);
+		Entity(std::string name, float x, float y, int id, short faction, string src, SDL_Renderer* renderer);
 		~Entity();
 
 		static enum TYPE {
@@ -50,6 +50,10 @@ class Entity : public Element
 		float      	 getY()		          { return this->y;												      }
 		short		 getXMovebox()        { return xMovebox;												  }
 		short		 getYMovebox()        { return yMovebox;												  }
+		short getXCenterBox() { return this->centerBox.center.x; }
+		short getYCenterBox() { return this->centerBox.center.y; }
+		short getCenterBoxRadius() { return this->centerBox.radius; }
+		uti::Circle getCenterBox() { return this->centerBox; }
 		short		 getID()			  { return this->id;												  }
 		SDL_Rect*    getPClickBox()       { return &clickBox;												  }
 		float      	 getDir()		      { return this->dir;												  }
@@ -71,6 +75,7 @@ class Entity : public Element
 		float getXChange()				  { return this->xChange;											  }
 		float getYChange()				  { return this->yChange;											  }	
 		short getHealth() { return this->health; }
+		short getFaction() { return this->faction; }
 
 
 		void setAnimationSpeed(short animationSpeed) { this->animationSpeed = animationSpeed; }
@@ -81,7 +86,9 @@ class Entity : public Element
 		void increaseStep()					 { step++;												   }
 		void resetStep()					 { step = 0;											   }
 		void updateMovebox()				 { xMovebox = x + 125; yMovebox = y + 185;				   }
-		void updateClickBox()				 { clickBox.x = pos.x + 90; clickBox.y = pos.y + 65;	   }
+		void updateClickBox()				 { clickBox.x = x + 90;  clickBox.y = y + 65;	   }
+		void updateCenterBox()				 { centerBox.center.x = x + 125; centerBox.center.y = y + 140;     }
+		void updateBoxes()					 { updateMovebox(); updateClickBox(); updateRBars(); updateCenterBox(); }
 		void addX(float x)				     { this->x += x; this->pos.x = this->x;					   }
 		void addY(float y)				     { this->y += y; this->pos.y = this->y;					   }
 		void addXOffset(int xOffset)		 { this->xOffset += xOffset;							   }
@@ -96,8 +103,10 @@ class Entity : public Element
 		void setSpellActive(bool state)      { this->spellActive = state;							   }
 		void setXChange(float xChange)		 { this->xChange = xChange;								   }
 		void setYChange(float yChange)		 { this->yChange = yChange;								   }
-		void setSpell(short spellID) { if (spellID == 0) { this->spellUsed->resetSpell(*this); this->spellUsed = nullptr; this->animationID = 1; return; }   this->spellUsed = spells[spellID]; }
+		void setSpell(short spellID) { if (spellID == 0) { if(this->spellUsed) this->spellUsed->resetSpell(*this); this->spellUsed = nullptr; this->animationID = 1; return; } this->spellUsed = spells[spellID]; }
 		void setSpell() { this->spellUsed = nullptr; }
+		void setFaction(short faction) { this->faction = faction; }
+		void setHealthImg(short playerFaction, SDL_Renderer* renderer);
 
 		void setPos(float x, float y);
 
@@ -121,8 +130,9 @@ class Entity : public Element
 
 		SDL_Surface* imgBar		   = nullptr;
 		SDL_Texture* textBar	   = nullptr;
-		SDL_Surface* imgHealth	   = nullptr;
+		SDL_Surface* imgHealth     = nullptr;
 		SDL_Texture* textHealth    = nullptr;
+
 		SDL_Surface* imgRessource  = nullptr;
 		SDL_Texture* textRessource = nullptr;
 
@@ -131,7 +141,8 @@ class Entity : public Element
 		float deltaTime = 0;//a delete pour debug avec la position anticipée
 		float xChange = 0, yChange = 0;
 
-		short category = 0, step = 0, xMovebox = 0, yMovebox = 0;
+		short category = 0, step = 0, xMovebox = 0, yMovebox = 0, faction = 0;//faction 0 1 2 neutral fac1 fac2
+		uti::Circle centerBox = { { 0, 0 }, 0 };
 		float dir = 0.0f, xRate = 0.0f, yRate = 0.0f, speed = 0.0f;
 		bool alive = true, moving = false, spellActive = false, aaActive = false, cancelAA = false;
 

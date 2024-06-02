@@ -7,7 +7,7 @@ const map<short, string> Entity::types = {
     {TYPE::Drake, "Dragon"}
 };
 
-Entity::Entity(std::string name, float xMap, float yMap, int id, int category, string imgSrc, SDL_Renderer* renderer) : Element(xMap, yMap, 250, 250 )
+Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, string imgSrc, SDL_Renderer* renderer) : Element(xMap, yMap, 250, 250 )
 {
     this->pseudo = Pseudo(name, renderer);
 
@@ -28,11 +28,13 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, int category, s
     this->xRate = 0;
     this->yRate = 0;
 
-    posBarH.x = pos.x;
-    posBarH.y = pos.y;
-    posBarH.w = 100;
-    posBarH.h = 10;
+    posBarH.x  = x;
+    posBarH.y  = y;
+    posBarH.w  = 100;
+    posBarH.h  = 10;
     posHealth.h = 10;
+
+    centerBox.radius = 25;
 
     imgPortrait = IMG_Load(string("img/entity/" + imgSrc + "/picture/head.png").c_str());
     if (imgPortrait) textPortrait = SDL_CreateTextureFromSurface(renderer, imgPortrait);
@@ -42,7 +44,7 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, int category, s
     if (imgBar) textBar = SDL_CreateTextureFromSurface(renderer, imgBar);
     else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> bar.png");      exit(0); }
 
-    SDL_Surface* imgHealth = IMG_Load(string("img/ui/ressources/health.png").c_str());
+    SDL_Surface* imgHealth = IMG_Load(string(string("img/ui/ressources/a_health.png")).c_str());
     if (imgHealth) textHealth = SDL_CreateTextureFromSurface(renderer, imgHealth);
     else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> health.png");   exit(0); }
 
@@ -92,9 +94,7 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, int category, s
     img[Whirlwind::animationID]    = spells[Whirlwind::id]->getImg();
     text[Whirlwind::animationID]   = spells[Whirlwind::id]->getText();
 
-    updateMovebox();
-    updateClickBox();
-    updateRBars();
+    updateBoxes();
 }
 
 Entity::~Entity()
@@ -157,9 +157,7 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
         }
     }
 
-    updateRBars();
-    updateMovebox();
-    updateClickBox();
+    updateBoxes();
 
     //cout << ((spellUsed) ? spellUsed->getID() : 0) << endl;
 
@@ -238,8 +236,8 @@ void Entity::updateRBars()
 {
     if (this->y > -50)
     {
-        posBarH.y = this->pos.y + 40;
-        posHealth.y = this->pos.y + 40;
+        posBarH.y   = this->y + 40;
+        posHealth.y = this->y + 40;
     }
     else
     {
@@ -247,8 +245,8 @@ void Entity::updateRBars()
         posHealth.y = this->pos.y + 200;
     }
 
-    posBarH.x = this->pos.x + 75;
-    posHealth.x = this->pos.x + 75;
+    posBarH.x   = this->x + 75;
+    posHealth.x = this->x + 75;
 }
 
 void Entity::update()
@@ -287,6 +285,13 @@ void Entity::update()
     else if (!spellActive && moving == true && animationID != 1)  animationID = 1;
 
     //cout << spellActive << " ANIMATIONID: " << animationID << endl;
+}
+
+void Entity::setHealthImg(short playerFaction, SDL_Renderer* renderer)
+{
+    SDL_Surface* imgHealth = IMG_Load(string(string("img/ui/ressources/") + string((faction == 0) ? "n_" : (faction == playerFaction) ? "a_" : "e_") + string("health.png")).c_str());
+    if (imgHealth) textHealth = SDL_CreateTextureFromSurface(renderer, imgHealth);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> health.png");   exit(0); }
 }
 
 void Entity::setPos(float xMap, float yMap)

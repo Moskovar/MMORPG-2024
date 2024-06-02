@@ -5,6 +5,8 @@ Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
 {
     moving = true;
     boostSpeed = 2;
+    range = 50;
+    dmg = 10;
 
     string src = "";
     for (float i = 0; i < 4; i += 0.5)
@@ -72,4 +74,9 @@ void Whirlwind::resetSpell(Entity& player)
     player.setSpellActive(false);
     player.setCancelAA(false);
     player.setAnimationSpeed(15);
+}
+
+bool Whirlwind::isInRange(uti::Circle player, uti::Circle enemy)
+{
+    return uti::doCirclesIntersect(player, enemy);
 }

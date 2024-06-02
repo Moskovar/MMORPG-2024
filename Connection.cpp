@@ -61,17 +61,6 @@ Connection::~Connection()
     WSACleanup();
 }
 
-void Connection::sendNETCP(string data)
-{
-    int iResult = ::send(tcpSocket, data.c_str(), (int)strlen(data.c_str()), 0);
-    if (iResult == SOCKET_ERROR) {
-        std::cerr << "send failed: " << WSAGetLastError() << std::endl;
-        //closesocket(tcpSocket);
-        //WSACleanup();
-    }
-    //std::cout << "Bytes Sent: " << iResult << std::endl;
-}
-
 void Connection::sendNETCP(uti::NetworkEntity ne)
 {
     if (tcpSocket == INVALID_SOCKET) {
@@ -84,7 +73,6 @@ void Connection::sendNETCP(uti::NetworkEntity ne)
     ne.hp        = htons(ne.hp);
     ne.xMap      = htonl(ne.xMap);
     ne.yMap      = htonl(ne.yMap);
-    //ne.spell     = htons(ne.spell);
     ne.timestamp = htonll(ne.timestamp);
     int iResult = ::send(tcpSocket, (const char*)&ne, sizeof(ne), 0);
     if (iResult == SOCKET_ERROR) {
@@ -126,7 +114,7 @@ void Connection::sendNEUDP(uti::NetworkEntity& ne)
     }
 }
 
-bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, SDL_bool& run)
+bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, uti::NetworkEntityFaction& nef, SDL_bool& run)
 {
     int bytesReceived = 0;
     int totalReceived = 0;
@@ -161,6 +149,7 @@ bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, S
     unsigned long dataSize = 0;
     if      (header == 0) dataSize = sizeof(uti::NetworkEntity);
     else if (header == 1) dataSize = sizeof(uti::NetworkEntitySpell);
+    else if (header == 3) dataSize = sizeof(uti::NetworkEntityFaction);
 
     // Réception des données restantes
     totalReceived = sizeof(header); // Réinitialiser totalReceived pour recevoir les données après le header
@@ -193,7 +182,7 @@ bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, S
         ne.yMap = ntohl(ne.yMap);
         // ne.spell    = ntohs(ne.spell);
 
-        //std::cout << "Received: " << ne.id << " : " << ne.hp << " : " << ne.xMap << " : " << ne.yMap << std::endl;
+        std::cout << "Received: " << ne.id << " : " << ne.hp << " : " << ne.xMap << " : " << ne.yMap << std::endl;
     }
     else if (header == 1)
     {
@@ -203,6 +192,13 @@ bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, S
         nes.spellID = ntohs(nes.spellID);
 
         cout << "Received H: " << nes.header << " : " << nes.id << " : " << nes.spellID << endl;
+    }
+    else if (header == 3)
+    {
+        std::memcpy(&nef, buffer, dataSize);
+        nef.id      = ntohs(nef.id);
+        nef.faction = ntohs(nef.faction);
+        cout << "Received H: " << nef.header << " : " << nef.id << " : faction-> " << nef.faction << endl;
     }
 
     return true;

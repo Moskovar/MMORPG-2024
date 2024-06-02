@@ -85,9 +85,11 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    uti::NetworkEntity ne = { 0, 0, 0, 0, 0 };
-    uti::NetworkEntitySpell nes = {};
-    co.recvTCP(ne, nes, run);
+    uti::NetworkEntity ne         = { 0, 0, 0, 0, 0 };
+    uti::NetworkEntitySpell nes   = {};
+    uti::NetworkEntityFaction nef = {};
+    co.recvTCP(ne, nes, nef, run);
+    co.recvTCP(ne, nes, nef, run);
     if (ne.id == -1) { cout << "Le serveur est plein" << endl; exit(1); }//changer avec une fermeture prope du socket ??
 
     //if (SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1") == SDL_FALSE) {
@@ -120,17 +122,19 @@ int main(int argc, char* argv[])
     int rowMap = posy / 1080, colMap = posx / 1920;
     initialXOffset = width / 2 - 125 - ((int)posx % 1920);
     initialYOffset = height / 2 - 125 - ((int)posy % 1080);
-    c = new Warrior("Titus", posx, posy, ne.id, uti::Category::PLAYER, renderer);
+    c = new Warrior("Titus", posx, posy, ne.id, 1, renderer);
     c->setHealth(ne.hp);
+    c->setFaction(nef.faction);
+    cout << "FACTION: " << c->getFaction() << endl;
     entities[ne.id] = c;
     c->setXYMap(posx, posy);
-    NPC npc("DENT", 2780, 1440, -1, uti::Category::NPC, "character/warrior", false, dynamic_cast<Character*>(c), renderer);
-    entities[-1] = &npc;
+    //NPC npc("DENT", 2780, 1440, -1, 0, "character/warrior", false, dynamic_cast<Character*>(c), renderer);
+    //entities[-1] = &npc;
     ui = new UI(window, renderer, c);
     
     //qb.addQuest(new Quest("First quest", "First quest in the world", 100, window, renderer));
     v_elements[0].push_back(dynamic_cast<Element*>(c));
-    v_elements[1].push_back(dynamic_cast<Element*>(&npc));
+    //v_elements[1].push_back(dynamic_cast<Element*>(&npc));
 
     //--- Personnage au milieu de l'écran ---//
     c->addXOffset(initialXOffset);
@@ -195,7 +199,7 @@ int main(int argc, char* argv[])
     v_elements_solid = m.getElements(true);
     v_elements_depth = m.getElements(false);
     v_elements_depth.push_back(c);
-    v_elements_depth.push_back(&npc);
+    //v_elements_depth.push_back(&npc);
     
 
     sort(v_elements_depth.begin(), v_elements_depth.end(), compareZ);
@@ -213,6 +217,12 @@ int main(int argc, char* argv[])
     SDL_RenderClear(renderer);
     SDL_SetWindowSize(window, width, height);
     SDL_SetWindowPosition(window, 0, 0);
+
+    //--- pour mettre à jour les boxes car problème sinon [à régler...] ---//
+    mtx.lock();
+    for (auto it = entities.begin(); it != entities.end(); ++it)
+        it->second->updateBoxes();
+    mtx.unlock();
 
     // Activer la capture de la souris dans la fenêtre
     SDL_SetWindowGrab(window, SDL_TRUE);
@@ -306,8 +316,13 @@ int main(int argc, char* argv[])
         SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
 
         for(auto it = entities.begin(); it != entities.end(); ++it)
-            if(it->second) draw_circle(renderer, it->second->getXMovebox() + 5 * it->second->getSpeed() * it->second->getXRate() * it->second->getDeltaTime(), it->second->getYMovebox() + 5 * it->second->getSpeed() * it->second->getYRate() * it->second->getDeltaTime(), 10);
-        draw_circle(renderer, c->getXMovebox() + 5 * c->getSpeed() * c->getXRate() * c->getDeltaTime(), c->getYMovebox() + 5 * c->getSpeed() * c->getYRate() * c->getDeltaTime(), 10);
+            if (it->second)
+            {
+                draw_circle(renderer, it->second->getXMovebox() + 5 * it->second->getSpeed() * it->second->getXRate() * it->second->getDeltaTime(), it->second->getYMovebox() + 5 * it->second->getSpeed() * it->second->getYRate() * it->second->getDeltaTime(), 10);
+                draw_circle(renderer, it->second->getXCenterBox(), it->second->getYCenterBox(), 25);
+            }
+            draw_circle(renderer, c->getXMovebox() + 5 * c->getSpeed() * c->getXRate() * c->getDeltaTime(), c->getYMovebox() + 5 * c->getSpeed() * c->getYRate() * c->getDeltaTime(), 10);
+            draw_circle(renderer, c->getXCenterBox(), c->getYCenterBox(), c->getCenterBoxRadius());
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         //SDL_RenderDrawRect(renderer, npc.getPClickBox());
@@ -322,13 +337,13 @@ int main(int argc, char* argv[])
         SDL_Delay(8);
     }
 
-    if(t_player.joinable())  t_player.join();
-    if (t_players.joinable())  t_players.join();
-    if(t_spell.joinable())   t_spell.join();
-    if(t_aa.joinable())      t_aa.join();
-    if (t_camera.joinable()) t_camera.join();
-    if (t_screenMsg.joinable()) t_screenMsg.join();
-    if (t_listen_tcp.joinable()) t_listen_tcp.join();
+    if(t_player.joinable())     t_player.join();
+    if(t_players.joinable())    t_players.join();
+    if(t_spell.joinable())      t_spell.join();
+    if(t_aa.joinable())         t_aa.join();
+    if(t_camera.joinable())     t_camera.join();
+    if(t_screenMsg.joinable())  t_screenMsg.join();
+    if(t_listen_tcp.joinable()) t_listen_tcp.join();
     //if (t_listen_udp.joinable()) t_listen_udp.join();
 
 
@@ -388,6 +403,7 @@ void t_move_players()
                 Entity* e_cast = dynamic_cast<Entity*>(e);
                 //if(e_cast->getSpellUsed()) cout << e_cast->getSpellUsed()->getID() << endl;
                 //if (e_cast->isSpellActive()) continue;
+                //cout << c->getFaction() << " : " << e_cast->getFaction() << endl;
                 e_cast->update();
                 if (e_cast->getXRate() == 0 && e_cast->getYRate() == 0) { e_cast->resetStep(); continue; }
 
@@ -411,9 +427,9 @@ void t_move_players()
                     e_cast->setX(c->getX() - (c->getXMap() - e_cast->getXMap()));
                     e_cast->setY(c->getY() - (c->getYMap() - e_cast->getYMap()));
                     
-                    e_cast->updateMovebox();
-                    e_cast->updateClickBox();
+                    e_cast->updateBoxes();
                 }
+
 
                 //cout << e_cast->getAnimationID() << endl;
 
@@ -494,12 +510,14 @@ void t_receive_data_TCP()
 {
     uti::NetworkEntity ne = { -1, 0, 0, 0, 0, 0 };
     uti::NetworkEntitySpell nes = { -1, 0, 0 };
+    uti::NetworkEntityFaction nef = { -1, 0, 0 };
 
     while (run)
     {
         ne.header  = -1;
         nes.header = -1;
-        if (co.recvTCP(ne, nes, run) && run);// cout << "TCP NE received: " << ne.id << " : " << (float)ne.xMap / 100 << " : " << (float)ne.yMap / 100 << " : " << ne.timestamp << endl;//pour le debug
+        nef.header = -1;
+        if (co.recvTCP(ne, nes, nef, run) && run);// cout << "TCP NE received: " << ne.id << " : " << (float)ne.xMap / 100 << " : " << (float)ne.yMap / 100 << " : " << ne.timestamp << endl;//pour le debug
         else { run = SDL_FALSE; break;  }
         
         if (ne.header != -1 && ne.timestamp == -1)//alors c'est une déconnexion
@@ -546,13 +564,12 @@ void t_receive_data_TCP()
             continue;
         }
         
+        //Si on reçoit l'utilisation d'un sort
         if (nes.header != -1 && entities[nes.id])
         {
             mtx.lock();
-            entities[nes.id]->setSpell(nes.spellID);
+            if(entities[nes.id]) entities[nes.id]->setSpell(nes.spellID);
             mtx.unlock();
-            if(entities[nes.id]->getSpellUsed()) cout << "SPELL SET TO " << entities[nes.id]->getSpellUsed() << endl;
-            else                                 cout << "SPELL SET TO nullptr" << endl;
             continue;
         }
         
@@ -560,11 +577,20 @@ void t_receive_data_TCP()
         if (ne.header != -1 && /*!entities[ne.id] && */c->getID() != ne.id) //si c'est le personnage du joueur alors il est déjà mis à sa création au début
         { //connexion on l'ajoute aux listes
             mtx.lock(); 
-            entities[ne.id] = new Warrior("Teeta", ne.xMap / 100, ne.yMap / 100, ne.id, uti::Category::PLAYER, renderer);
+            entities[ne.id] = new Warrior("Teeta", ne.xMap / 100, ne.yMap / 100, ne.id, 1, renderer);
             updateNetworkPlayer(entities[ne.id], ne);
             v_elements[1].push_back(entities[ne.id]);
             v_elements_depth.push_back(entities[ne.id]);
             mtx.unlock();
+        }
+
+        if (nef.header != -1 && entities[nef.id])
+        {
+            mtx.lock();
+            entities[nef.id]->setFaction(nef.faction);
+            entities[nef.id]->setHealthImg(c->getFaction(), renderer);
+            mtx.unlock();
+            cout << "ENTITY FACTION SET !!" << endl;
         }
         //cout << "v_elements size: " << v_elements[1].size() << endl;
     }
@@ -587,6 +613,7 @@ void updateNetworkPlayer(Entity* e, const uti::NetworkEntity& ne)
     if (e->getCountDir() != 0) e->setMoving(true);
     else                       e->setMoving(false);
     //e->setSpell(ne.spell);
+    e->updateBoxes();
     e->update();
 }
 
@@ -624,7 +651,7 @@ void t_update_camera()
                     for (Element* e : v)
                     {
                         e->updateXOffset(cameraSpeed);
-                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element 
+                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateBoxes(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element 
                     }
                 m.updateXOffset(cameraSpeed);
             }//on déplace la caméra dans un sens et on enregistre l'offset dans l'autre sens pour revenir au point de départ
@@ -634,7 +661,7 @@ void t_update_camera()
                     for (Element* e : v)
                     {
                         e->updateXOffset(-cameraSpeed);
-                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element
+                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateBoxes(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element
                     }
                 m.updateXOffset(-cameraSpeed);
             }
@@ -645,7 +672,7 @@ void t_update_camera()
                     for (Element* e : v)
                     {
                         e->updateYOffset(cameraSpeed);
-                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element
+                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateBoxes(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element
                     }
 
                 //--- Mise à jour de la position des fragments de map ---//
@@ -658,7 +685,7 @@ void t_update_camera()
                     for (Element* e : v)
                     {
                         e->updateYOffset(-cameraSpeed);
-                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element
+                        if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateBoxes(); }//cast en entity car ce sont des méthodes de Entity qui sont virtuelles pures pour Element
                     }
                 //--- Mise à jour de la position des fragments de map ---//
                 m.updateYOffset(-cameraSpeed);
@@ -672,7 +699,7 @@ void t_update_camera()
                 for (Element* e : v)
                 {
                     e->updateXOffset(-c->getXChange());
-                    if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); dynamic_cast<Entity*>(e)->updateRBars(); }
+                    if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateBoxes(); }
                 }
             m.updateXOffset(-c->getXChange());
             //cout << -c->getXChange() << endl;
@@ -684,7 +711,7 @@ void t_update_camera()
                 for (Element* e : v)
                 {
                     e->updateYOffset(-c->getYChange());
-                    if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateMovebox(); dynamic_cast<Entity*>(e)->updateClickBox(); }
+                    if (dynamic_cast<Entity*>(e)) { dynamic_cast<Entity*>(e)->updateBoxes(); }
                 }
             //--- Mise à jour de la position des fragments de map ---//
             m.updateYOffset(-c->getYChange());

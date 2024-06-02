@@ -15,13 +15,14 @@ class Connection
 		Connection();
 		~Connection();
 
-		//bool isTCPSocketValid() { return tcpSocket != INVALID_SOCKET; }
-
-		void sendNETCP(string data);
 		void sendNETCP(uti::NetworkEntity ne);
 		void sendNESTCP(uti::NetworkEntitySpell nes);
+		bool recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, uti::NetworkEntityFaction& nef, SDL_bool& run);
+
+
+
+
 		void sendNEUDP(uti::NetworkEntity& ne);
-		bool recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, SDL_bool& run);
 		void recvNEUDP(uti::NetworkEntity& ne);
 
 	private:
