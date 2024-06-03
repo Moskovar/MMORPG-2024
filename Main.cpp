@@ -367,20 +367,33 @@ void t_move_player()
     Uint32 lastTime = SDL_GetTicks64();
     Uint32 currentTime;
     float deltaTime;
-    bool sendSpellData = false;
+    bool sendSpellData = false, sendSpellEffectData = false;
+    vector<Entity*> entitiesDamaged;
     
     while (c->isAlive())
     {
         currentTime = SDL_GetTicks();
         deltaTime = (currentTime - lastTime) / 1000.0f; // Convert to seconds
         lastTime = currentTime;
+        short eid = 0;
         //cout << v_elements_solid.size() << endl;
         mtx.lock();
-        c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime, sendSpellData);
-        mtx.unlock();
-        if (sendSpellData) { co.sendNETCP(c->getNE()); co.sendNESTCP(c->getNES(0)); sendSpellData = false; }
+        c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime, sendSpellData, sendSpellEffectData, entitiesDamaged);
+        if (sendSpellData)       { co.sendNETCP(c->getNE()); co.sendNESTCP(c->getNES(0));                     sendSpellData = false;       }
+        if (sendSpellEffectData) 
+        { 
+            for (Entity* e : entitiesDamaged)
+            {
+                co.sendNETCP(c->getNE()); 
+                co.sendNESETCP(c->getNESE(Whirlwind::id, e->getID()));
+            }
+            
+            sendSpellEffectData = false; 
+        }
+		mtx.unlock();
         Sleep(1);
-    }
+        entitiesDamaged.clear();
+	}
     run = SDL_FALSE;
 }
 

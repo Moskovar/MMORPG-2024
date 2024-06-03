@@ -17,6 +17,7 @@ class Connection
 
 		void sendNETCP(uti::NetworkEntity ne);
 		void sendNESTCP(uti::NetworkEntitySpell nes);
+		void sendNESETCP(uti::NetworkEntitySpellEffect nes);
 		bool recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, uti::NetworkEntityFaction& nef, SDL_bool& run);
 
 

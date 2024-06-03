@@ -97,6 +97,22 @@ void Connection::sendNESTCP(uti::NetworkEntitySpell nes)
     //std::cout << "Bytes Sent: " << iResult << std::endl;
 }
 
+void Connection::sendNESETCP(uti::NetworkEntitySpellEffect nese)
+{
+    if (tcpSocket == INVALID_SOCKET) {
+        std::cerr << "Invalid TCP socket." << std::endl;
+        return;
+    }
+    nese.header  = htons(nese.header);
+    nese.id      = htons(nese.id);
+    nese.spellID     = htons(nese.spellID);
+
+    int iResult = ::send(tcpSocket, (const char*)&nese, sizeof(nese), 0);
+    if (iResult == SOCKET_ERROR) {
+        std::cerr << "send failed: " << WSAGetLastError() << std::endl;
+    }
+}
+
 void Connection::sendNEUDP(uti::NetworkEntity& ne)
 {
     ne.id = htons(ne.id);

@@ -7,6 +7,7 @@ Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
     boostSpeed = 2;
     range = 50;
     dmg = 10;
+    hitSpeed = 250;
 
     string src = "";
     for (float i = 0; i < 4; i += 0.5)
@@ -31,7 +32,6 @@ void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_so
 {
     if (!player.isSpellActive())
     {
-        cout << "OK START" << endl;
         player.setSpellActive(true);
         player.setAnimationID(animationID);
         player.setAnimationSpeed(20);
@@ -39,7 +39,7 @@ void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_so
 
     step++;
     player.setStep((step % 20) * player.getAnimationSpeed());
-    if (step % 20 == 0) cout << player.getAnimationID() << endl;//cout << player.getDir() << " : " << step << endl;
+    //if (step % 20 == 0) cout << player.getAnimationID() << endl;//cout << player.getDir() << " : " << step << endl;
 
     if (step == 500)
     {
@@ -56,7 +56,6 @@ void Whirlwind::runOthers(vector<Element*>& v_elements, vector<Element*> v_eleme
 {
     if (!player.isSpellActive())
     {
-        cout << "OK START" << endl;
         player.setSpellActive(true);
         player.setAnimationID(animationID);
         player.setAnimationSpeed(20);

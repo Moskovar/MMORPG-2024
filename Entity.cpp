@@ -114,7 +114,7 @@ Entity::~Entity()
     std::cout << "Entity: " << pseudo.getFont().getText() << " cleared !" << std::endl;
 }
 
-void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData)
+void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, bool& sendSpellEffectData, vector<Entity*>& entitiesDamaged)
 {
     if (!moving && (!spellUsed || (spellUsed && !spellUsed->isMoving()))) return;
 
@@ -158,6 +158,27 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
     }
 
     updateBoxes();
+
+
+    if (spellUsed)
+    {
+        spellUsed->checkDmgDone();
+        if (!spellUsed->isDmgDone())
+        {
+            for (Element* e : v_elements)
+            {
+                if (dynamic_cast<Entity*>(e))
+                {
+                    if (spellUsed->isInRange(centerBox, dynamic_cast<Entity*>(e)->getCenterBox()))
+                    {
+                        spellUsed->setDmgDone();
+                        sendSpellEffectData = true;
+                        entitiesDamaged.push_back(dynamic_cast<Entity*>(e));
+                    }
+                }
+            }
+        }
+    }
 
     //cout << ((spellUsed) ? spellUsed->getID() : 0) << endl;
 
@@ -282,7 +303,7 @@ void Entity::update()
     }
 
     if      (!spellActive && moving == false && animationID != 0) animationID = 0;
-    else if (!spellActive && moving == true && animationID != 1)  animationID = 1;
+    else if (!spellActive && moving == true && animationID  != 1) animationID = 1;
 
     //cout << spellActive << " ANIMATIONID: " << animationID << endl;
 }

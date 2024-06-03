@@ -35,7 +35,7 @@ class Entity : public Element
 
 		virtual void draw(SDL_Renderer* renderer) = 0;
 
-		void move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData);
+		void move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, bool& sendSpellEffectData, vector<Entity*>& entitiesDamaged);
 
 		Spell* getSpell(int i)			  { return spells[i];												  }
 		Spell* getSpellUsed() { return this->spellUsed; }
@@ -112,7 +112,8 @@ class Entity : public Element
 
 		//--- Méthode pour la NetworkEntity ---//
 		uti::NetworkEntity getNE() { return {0, id, countDir, health, (int)xMap * 100, (int)yMap * 100, uti::getCurrentTimestamp()}; }
-		uti::NetworkEntitySpell getNES(short spellID) { return {1, id, spellID}; }
+		uti::NetworkEntitySpell getNES(short spellID) { return {1, id, spellID}; }//récupérer le spell id autrement
+		uti::NetworkEntitySpellEffect getNESE(short spellID, short eid) { return { 2, eid, spellID }; }
 
 		short countDir;
 		bool up = false, right = false, down = false, left = false;
