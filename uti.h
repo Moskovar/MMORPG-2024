@@ -5,10 +5,13 @@
 #include <map>
 #include <string>
 #include <cmath>
+//#include "Entity.h"
 
 using namespace std;
 
 namespace uti {
+
+
 	enum Language {
 		FR,
 		ENG
@@ -31,6 +34,10 @@ namespace uti {
 		NES = 1,
 		NESE = 2,
 		NEF = 3
+	};
+
+	enum SpellID {
+		WHIRLWIND = 4
 	};
 
 	struct MoveRate {//utile ??

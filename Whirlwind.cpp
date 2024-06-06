@@ -3,6 +3,8 @@
 
 Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
 {
+    id = uti::SpellID::WHIRLWIND;
+
     moving = true;
     boostSpeed = 2;
     range = 50;
@@ -63,7 +65,7 @@ void Whirlwind::runOthers(vector<Element*>& v_elements, vector<Element*> v_eleme
 
     step++;
     player.setStep((step % 20) * player.getAnimationSpeed());
-    if (step % 20 == 0) cout << player.getAnimationID() << endl;//cout << player.getDir() << " : " << step << endl;
+    //if (step % 20 == 0) cout << player.getAnimationID() << endl;//cout << player.getDir() << " : " << step << endl;
 }
 
 void Whirlwind::resetSpell(Entity& player)

@@ -1,11 +1,6 @@
 #include "Entity.h"
 #include "Building.h"
-
-const map<short, string> Entity::types = {
-    {TYPE::Humanoid, "Humanoïde"},
-    {TYPE::Beast, "Bête"},
-    {TYPE::Drake, "Dragon"}
-};
+#include <chrono>
 
 Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, string imgSrc, SDL_Renderer* renderer) : Element(xMap, yMap, 250, 250 )
 {
@@ -90,9 +85,9 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
     img[AutoAttack::animationID]  = spells[AutoAttack::id]->getImg();
     text[AutoAttack::animationID] = spells[AutoAttack::id]->getText();
 
-    spells[Whirlwind::id] = new Whirlwind(renderer);
-    img[Whirlwind::animationID]    = spells[Whirlwind::id]->getImg();
-    text[Whirlwind::animationID]   = spells[Whirlwind::id]->getText();
+    spells[uti::SpellID::WHIRLWIND] = new Whirlwind(renderer);
+    img[Whirlwind::animationID]    = spells[uti::SpellID::WHIRLWIND]->getImg();
+    text[Whirlwind::animationID]   = spells[uti::SpellID::WHIRLWIND]->getText();
 
     updateBoxes();
 }
@@ -114,7 +109,7 @@ Entity::~Entity()
     std::cout << "Entity: " << pseudo.getFont().getText() << " cleared !" << std::endl;
 }
 
-void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, bool& sendSpellEffectData, vector<Entity*>& entitiesDamaged)
+void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, bool& sendSpellEffectData, vector<SpellEffect>& spellEffects, chrono::high_resolution_clock::time_point now)
 {
     if (!moving && (!spellUsed || (spellUsed && !spellUsed->isMoving()))) return;
 
@@ -162,19 +157,37 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
 
     if (spellUsed)
     {
-        spellUsed->checkDmgDone();
-        if (!spellUsed->isDmgDone())
+        for (Element* e : v_elements)
         {
-            for (Element* e : v_elements)
+            if (dynamic_cast<Entity*>(e) && dynamic_cast<Entity*>(e)->getFaction() != faction)
             {
-                if (dynamic_cast<Entity*>(e))
+                if (spellUsed->isInRange(centerBox, dynamic_cast<Entity*>(e)->getCenterBox()))
                 {
-                    if (spellUsed->isInRange(centerBox, dynamic_cast<Entity*>(e)->getCenterBox()))
+                    bool entityFound = false;
+                    for (int i = spellEffects.size() - 1; i >= 0; i--)
                     {
-                        spellUsed->setDmgDone();
-                        sendSpellEffectData = true;
-                        entitiesDamaged.push_back(dynamic_cast<Entity*>(e));
+                        if (spellEffects[i].entityID == dynamic_cast<Entity*>(e)->getID() && spellEffects[i].spellID == spellUsed->getID())
+                        {
+                            if (chrono::duration_cast<std::chrono::milliseconds>(now - spellEffects[i].last_hit_time).count() >= spellUsed->getHitSpeed())//si des dmg peuvent de nouveau être fait
+                            {
+                                cout << "Entity: " << dynamic_cast<Entity*>(e)->getID() << " in range !" << endl;
+                                cout << chrono::duration_cast<std::chrono::milliseconds>(now - spellEffects[i].last_hit_time).count() << endl;
+                                spellEffects.push_back({ dynamic_cast<Entity*>(e)->getID(), spellUsed->getID(), now});
+                            }
+                            entityFound = true;
+                            break;
+                        }
                     }
+
+                    if (!entityFound)//Si on a pas trouvé l'entité c'est qu'elle n'a pas été touchée récemment
+                    {
+                        cout << "Entity: " << dynamic_cast<Entity*>(e)->getID() << " in range !" << endl;
+                        spellEffects.push_back({ dynamic_cast<Entity*>(e)->getID(), spellUsed->getID(), now});
+                    }
+                    
+
+                    //sendSpellEffectData = true; uselss on envoie si on trouve un chrono à now
+                    //spellEffects[dynamic_cast<Entity*>(e)] = { 4, std::chrono::high_resolution_clock::now() };
                 }
             }
         }

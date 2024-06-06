@@ -27,6 +27,13 @@
 
 using namespace std;
 
+//struct SpellEffect //à bouger dans uti
+//{
+//    Entity* entity = nullptr;
+//    short spellID = 0;
+//    std::chrono::time_point < std::chrono::high_resolution_clock> last_hit_time;
+//};
+
 Connection co;
 
 mutex mtx;
@@ -237,12 +244,12 @@ int main(int argc, char* argv[])
                 case SDL_WINDOWEVENT: if (events.window.event == SDL_WINDOWEVENT_CLOSE) run = SDL_FALSE; break;
                 case SDL_KEYDOWN: // Un événement de type touche enfoncée est effectué
                     //--- Déplacements ---//
-                    if (events.key.keysym.sym == SDLK_z) { if (!c->up)    { c->countDir += uti::Direction::UP;    c->up = true;    c->update(); co.sendNETCP(c->getNE()); } }
+                    if (events.key.keysym.sym == SDLK_z) { if (!c->up)    { c->countDir += uti::Direction::UP;    c->up    = true; c->update(); co.sendNETCP(c->getNE()); } }
                     if (events.key.keysym.sym == SDLK_d) { if (!c->right) { c->countDir += uti::Direction::RIGHT; c->right = true; c->update(); co.sendNETCP(c->getNE()); } }
-                    if (events.key.keysym.sym == SDLK_s) { if (!c->down)  { c->countDir += uti::Direction::DOWN;  c->down = true;  c->update(); co.sendNETCP(c->getNE()); } }
-                    if (events.key.keysym.sym == SDLK_q) { if (!c->left)  { c->countDir += uti::Direction::LEFT;  c->left = true;  c->update(); co.sendNETCP(c->getNE()); } }
+                    if (events.key.keysym.sym == SDLK_s) { if (!c->down)  { c->countDir += uti::Direction::DOWN;  c->down  = true; c->update(); co.sendNETCP(c->getNE()); } }
+                    if (events.key.keysym.sym == SDLK_q) { if (!c->left)  { c->countDir += uti::Direction::LEFT;  c->left  = true; c->update(); co.sendNETCP(c->getNE()); } }
                     //--- Spells ---//
-                    if (events.key.keysym.sym == SDLK_a) { if (!c->isSpellActive()) { c->setCancelAA(true); if (!c->isSpellActive()) { c->setSpell(Whirlwind::id);  co.sendNESTCP(c->getNES(Whirlwind::id)); } } }
+                    if (events.key.keysym.sym == SDLK_a) { if (!c->isSpellActive()) { c->setCancelAA(true); if (!c->isSpellActive()) { c->setSpell(4);  co.sendNESTCP(c->getNES(uti::SpellID::WHIRLWIND)); } } }
                     if (events.key.keysym.sym == SDLK_e) { if (!c->isSpellActive()) { if (!c->isAAActive()) { c->setSpell(AutoAttack::id); co.sendNETCP(c->getNE()); } } }
                     if (events.key.keysym.sym == SDLK_y) {  }
 
@@ -368,31 +375,41 @@ void t_move_player()
     Uint32 currentTime;
     float deltaTime;
     bool sendSpellData = false, sendSpellEffectData = false;
-    vector<Entity*> entitiesDamaged;
     
+    vector<SpellEffect> spellEffects = {};
+    vector<SpellEffect> spellJustHit = {};//les sorts qui viennent juste d'être effectués, reset à chaque itération
+
+    chrono::high_resolution_clock::time_point now = chrono::high_resolution_clock::now();
+
     while (c->isAlive())
     {
+        now = chrono::high_resolution_clock::now();
         currentTime = SDL_GetTicks();
         deltaTime = (currentTime - lastTime) / 1000.0f; // Convert to seconds
         lastTime = currentTime;
         short eid = 0;
         //cout << v_elements_solid.size() << endl;
         mtx.lock();
-        c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime, sendSpellData, sendSpellEffectData, entitiesDamaged);
-        if (sendSpellData)       { co.sendNETCP(c->getNE()); co.sendNESTCP(c->getNES(0));                     sendSpellData = false;       }
-        if (sendSpellEffectData) 
+        c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime, sendSpellData, sendSpellEffectData, spellEffects, now);
+
+        if (sendSpellData)       
         { 
-            for (Entity* e : entitiesDamaged)
-            {
-                co.sendNETCP(c->getNE()); 
-                co.sendNESETCP(c->getNESE(Whirlwind::id, e->getID()));
-            }
-            
-            sendSpellEffectData = false; 
+            co.sendNETCP(c->getNE()); 
+            co.sendNESTCP(c->getNES(0));                     
+            sendSpellData = false;       
         }
+
+        for (int i = spellEffects.size() - 1; i >= 0; i--)//On check si un effet de sort a été ajouté
+        {
+            if (spellEffects[i].last_hit_time != now) break;//Si on tombe sur un effet de sort different de now, alors c'est qu'il vient pas d'être ajouté donc on sort, tous les suivants ne le seront pas
+
+            co.sendNETCP(c->getNE()); 
+            if(c->getSpellUsed()) co.sendNESETCP(c->getNESE(c->getSpellUsed()->getID(), spellEffects[spellEffects.size() - 1].entityID));
+        }
+            
+            //sendSpellEffectData = false; 
 		mtx.unlock();
         Sleep(1);
-        entitiesDamaged.clear();
 	}
     run = SDL_FALSE;
 }

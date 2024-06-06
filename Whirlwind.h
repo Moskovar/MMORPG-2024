@@ -15,7 +15,7 @@ public:
 	virtual void resetSpell(Entity& player) override;
 	bool isInRange(uti::Circle player, uti::Circle enemy) override;
 
-	static const short id = 4, animationID = 4;
+	static const short animationID = 4;
 
 private:
 	

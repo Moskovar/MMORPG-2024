@@ -18,6 +18,13 @@
 #define IMG_SIZE 16
 using namespace std;
 
+struct SpellEffect //à bouger dans uti
+{
+	short entityID = 0;
+	short spellID = 0;
+	chrono::high_resolution_clock::time_point last_hit_time;
+};
+
 class Entity : public Element
 {
 	public:
@@ -25,17 +32,11 @@ class Entity : public Element
 		Entity(std::string name, float x, float y, int id, short faction, string src, SDL_Renderer* renderer);
 		~Entity();
 
-		static enum TYPE {
-			Humanoid,
-			Beast,
-			Drake
-		};
-
 		static const map<short, string> types;
 
 		virtual void draw(SDL_Renderer* renderer) = 0;
 
-		void move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, bool& sendSpellEffectData, vector<Entity*>& entitiesDamaged);
+		void move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, bool& sendSpellEffectData, vector<SpellEffect>& spellEffects, chrono::high_resolution_clock::time_point now);
 
 		Spell* getSpell(int i)			  { return spells[i];												  }
 		Spell* getSpellUsed() { return this->spellUsed; }
