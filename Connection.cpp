@@ -105,7 +105,7 @@ void Connection::sendNESETCP(uti::NetworkEntitySpellEffect nese)
     }
     nese.header  = htons(nese.header);
     nese.id      = htons(nese.id);
-    nese.spellID     = htons(nese.spellID);
+    nese.spellID = htons(nese.spellID);
 
     int iResult = ::send(tcpSocket, (const char*)&nese, sizeof(nese), 0);
     if (iResult == SOCKET_ERROR) {
@@ -196,9 +196,10 @@ bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, u
         ne.hp = ntohs(ne.hp);
         ne.xMap = ntohl(ne.xMap);
         ne.yMap = ntohl(ne.yMap);
+        ne.timestamp = ntohll(ne.timestamp);
         // ne.spell    = ntohs(ne.spell);
 
-        std::cout << "Received: " << ne.id << " : " << ne.hp << " : " << ne.xMap << " : " << ne.yMap << std::endl;
+        std::cout << "POS" << " : " << ne.countDir << " : " << ne.hp << " : " << ne.xMap << " : " << ne.yMap << " : " << ne.timestamp << std::endl;
     }
     else if (header == 1)
     {
@@ -207,14 +208,14 @@ bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, u
         nes.id      = ntohs(nes.id);
         nes.spellID = ntohs(nes.spellID);
 
-        cout << "Received H: " << nes.header << " : " << nes.id << " : " << nes.spellID << endl;
+        cout << "Spell" << " : " << nes.id << " : " << nes.spellID << endl;
     }
     else if (header == 3)
     {
         std::memcpy(&nef, buffer, dataSize);
         nef.id      = ntohs(nef.id);
         nef.faction = ntohs(nef.faction);
-        cout << "Received H: " << nef.header << " : " << nef.id << " : faction-> " << nef.faction << endl;
+        //cout << "Received H: " << nef.header << " : " << nef.id << " : faction-> " << nef.faction << endl;
     }
 
     return true;

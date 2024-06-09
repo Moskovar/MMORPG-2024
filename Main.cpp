@@ -24,15 +24,7 @@
 #include <io.h>
 #include <fcntl.h>
 
-
 using namespace std;
-
-//struct SpellEffect //à bouger dans uti
-//{
-//    Entity* entity = nullptr;
-//    short spellID = 0;
-//    std::chrono::time_point < std::chrono::high_resolution_clock> last_hit_time;
-//};
 
 Connection co;
 
@@ -61,8 +53,6 @@ int mouseX = -1, mouseY = -1;
 
 void t_move_player();
 void t_move_players();
-void t_run_spell(Spell* spell, Entity* enemy);
-void t_run_aa(AutoAttack* spell, Entity* enemy);
 void t_run_screenMsg();
 void t_update_camera();
 void draw_circle(SDL_Renderer* renderer, int center_x, int center_y, int radius);
@@ -135,13 +125,10 @@ int main(int argc, char* argv[])
     cout << "FACTION: " << c->getFaction() << endl;
     entities[ne.id] = c;
     c->setXYMap(posx, posy);
-    //NPC npc("DENT", 2780, 1440, -1, 0, "character/warrior", false, dynamic_cast<Character*>(c), renderer);
-    //entities[-1] = &npc;
+
     ui = new UI(window, renderer, c);
     
-    //qb.addQuest(new Quest("First quest", "First quest in the world", 100, window, renderer));
     v_elements[0].push_back(dynamic_cast<Element*>(c));
-    //v_elements[1].push_back(dynamic_cast<Element*>(&npc));
 
     //--- Personnage au milieu de l'écran ---//
     c->addXOffset(initialXOffset);
@@ -206,20 +193,15 @@ int main(int argc, char* argv[])
     v_elements_solid = m.getElements(true);
     v_elements_depth = m.getElements(false);
     v_elements_depth.push_back(c);
-    //v_elements_depth.push_back(&npc);
-    
 
     sort(v_elements_depth.begin(), v_elements_depth.end(), compareZ);
 
     // Variables pour le calcul du delta time
     thread t_player(t_move_player);
     thread t_players(t_move_players);
-    thread t_spell;
-    thread t_aa;
     thread t_screenMsg;
     thread t_camera(t_update_camera);
     thread t_listen_tcp(t_receive_data_TCP);
-    //thread t_listen_udp(t_receive_data_udp);
     
     SDL_RenderClear(renderer);
     SDL_SetWindowSize(window, width, height);
@@ -249,8 +231,20 @@ int main(int argc, char* argv[])
                     if (events.key.keysym.sym == SDLK_s) { if (!c->down)  { c->countDir += uti::Direction::DOWN;  c->down  = true; c->update(); co.sendNETCP(c->getNE()); } }
                     if (events.key.keysym.sym == SDLK_q) { if (!c->left)  { c->countDir += uti::Direction::LEFT;  c->left  = true; c->update(); co.sendNETCP(c->getNE()); } }
                     //--- Spells ---//
-                    if (events.key.keysym.sym == SDLK_a) { if (!c->isSpellActive()) { c->setCancelAA(true); if (!c->isSpellActive()) { c->setSpell(4);  co.sendNESTCP(c->getNES(uti::SpellID::WHIRLWIND)); } } }
-                    if (events.key.keysym.sym == SDLK_e) { if (!c->isSpellActive()) { if (!c->isAAActive()) { c->setSpell(AutoAttack::id); co.sendNETCP(c->getNE()); } } }
+                    if (events.key.keysym.sym == SDLK_a) 
+                    { 
+                        if ((!c->getSpellUsed() || (c->getSpellUsed() && c->getSpellUsed()->isCancelable())) && c->getSpell(uti::SpellID::WHIRLWIND)->isAvailable())//Si pas de spell actif ou un spell interruptible et le spell est dispo
+                        { 
+                            c->setAAActive(false); 
+                            c->setSpell(uti::SpellID::WHIRLWIND);  
+                            co.sendNESTCP(c->getNES(uti::SpellID::WHIRLWIND)); 
+                            c->getSpell(uti::SpellID::WHIRLWIND)->start_cd(); 
+                        } 
+                    }
+                    if (events.key.keysym.sym == SDLK_e) 
+                    { 
+                         
+                    }
                     if (events.key.keysym.sym == SDLK_y) {  }
 
                     //--- Caméra ---//
@@ -314,7 +308,6 @@ int main(int argc, char* argv[])
                     e2->draw(renderer);
                     e2->isDrawn = true;
                 }
-
             }
         }
 
@@ -346,12 +339,9 @@ int main(int argc, char* argv[])
 
     if(t_player.joinable())     t_player.join();
     if(t_players.joinable())    t_players.join();
-    if(t_spell.joinable())      t_spell.join();
-    if(t_aa.joinable())         t_aa.join();
     if(t_camera.joinable())     t_camera.join();
     if(t_screenMsg.joinable())  t_screenMsg.join();
     if(t_listen_tcp.joinable()) t_listen_tcp.join();
-    //if (t_listen_udp.joinable()) t_listen_udp.join();
 
 
     SDL_FreeSurface(loading_screen_img);
@@ -374,7 +364,7 @@ void t_move_player()
     Uint32 lastTime = SDL_GetTicks64();
     Uint32 currentTime;
     float deltaTime;
-    bool sendSpellData = false, sendSpellEffectData = false;
+    bool sendSpellData = false;
     
     vector<SpellEffect> spellEffects = {};
     vector<SpellEffect> spellJustHit = {};//les sorts qui viennent juste d'être effectués, reset à chaque itération
@@ -390,13 +380,13 @@ void t_move_player()
         short eid = 0;
         //cout << v_elements_solid.size() << endl;
         mtx.lock();
-        c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime, sendSpellData, sendSpellEffectData, spellEffects, now);
+        c->move(v_elements[1], v_elements_solid, m, cameraLock, deltaTime, sendSpellData, spellEffects, now);
 
         if (sendSpellData)       
         { 
             co.sendNETCP(c->getNE()); 
             co.sendNESTCP(c->getNES(0));                     
-            sendSpellData = false;       
+            sendSpellData = false;
         }
 
         for (int i = spellEffects.size() - 1; i >= 0; i--)//On check si un effet de sort a été ajouté
@@ -406,8 +396,16 @@ void t_move_player()
             co.sendNETCP(c->getNE()); 
             if(c->getSpellUsed()) co.sendNESETCP(c->getNESE(c->getSpellUsed()->getID(), spellEffects[spellEffects.size() - 1].entityID));
         }
+
+        //on check si AA active, si CD OK et si distance OK
+        if (c->isAAActive() && c->getSpell(uti::SpellID::AA)->isAvailable() && c->getTarget()->isInClickRange(c->getXCenterBox(), c->getYCenterBox()))
+        {
+            c->setSpell(uti::SpellID::AA);
+            co.sendNESTCP(c->getNES(uti::SpellID::AA));
+            c->getSpell(uti::SpellID::AA)->start_cd();
+            co.sendNESETCP(c->getNESE(c->getSpellUsed()->getID(), c->getTarget()->getID()));
+        }
             
-            //sendSpellEffectData = false; 
 		mtx.unlock();
         Sleep(1);
 	}
@@ -431,11 +429,9 @@ void t_move_players()
             if (dynamic_cast<Entity*>(e))
             {
                 Entity* e_cast = dynamic_cast<Entity*>(e);
-                //if(e_cast->getSpellUsed()) cout << e_cast->getSpellUsed()->getID() << endl;
-                //if (e_cast->isSpellActive()) continue;
-                //cout << c->getFaction() << " : " << e_cast->getFaction() << endl;
+
                 e_cast->update();
-                if (e_cast->getXRate() == 0 && e_cast->getYRate() == 0) { e_cast->resetStep(); continue; }
+                if (e_cast->getXRate() == 0 && e_cast->getYRate() == 0 && !e_cast->getSpellUsed()) { e_cast->resetStep(); continue; }
 
                 bool collision = false;
 
@@ -459,7 +455,6 @@ void t_move_players()
                     
                     e_cast->updateBoxes();
                 }
-
 
                 //cout << e_cast->getAnimationID() << endl;
 
@@ -492,36 +487,13 @@ void t_move_players()
                 }
                 else
                 {
-                    if (e_cast->getSpellUsed()) e_cast->getSpellUsed()->runOthers(v_elements[1], v_elements_solid, *e_cast, nullptr);
+                    if (e_cast->getSpellUsed()) e_cast->getSpellUsed()->runOthers(*e_cast);
                 }
             }
         }
         mtx.unlock();
         SDL_Delay(1);
     }
-}
-
-void t_run_spell(Spell* spell, Entity* enemy)
-{
-    spell->run(v_elements[1], v_elements_solid, *c, nullptr);
-    //c->setSpell(0);
-    co.sendNETCP(c->getNE());
-    if (c->getCountDir() == 0) c->setMoving(false);
-}
-
-void t_run_aa(AutoAttack* spell, Entity* enemy)
-{
-    while (!c->getCancelAA())
-    {
-        spell->run(v_elements[1], v_elements_solid, *c, nullptr);
-        if (c->getCountDir() == 0) c->setMoving(false);
-        for (int p = 0; p < 1000; p++)
-        {
-            if (c->getCancelAA()) break;
-            Sleep(1);
-        }
-    }
-    c->setAAActive(false);
 }
 
 void t_receive_data_udp()
@@ -550,7 +522,8 @@ void t_receive_data_TCP()
         if (co.recvTCP(ne, nes, nef, run) && run);// cout << "TCP NE received: " << ne.id << " : " << (float)ne.xMap / 100 << " : " << (float)ne.yMap / 100 << " : " << ne.timestamp << endl;//pour le debug
         else { run = SDL_FALSE; break;  }
         
-        if (ne.header != -1 && ne.timestamp == -1)//alors c'est une déconnexion
+        //Si c'est une déconnexion
+        if (ne.header != -1 && ne.timestamp == -1)
         {
             mtx.lock();
             int i_delete = -1, i_delete_depth = -1;
@@ -586,7 +559,8 @@ void t_receive_data_TCP()
             continue;
         }
         
-        if (ne.header != -1 && entities[ne.id])//si le personnage existe alors on le met à jour
+        //si le personnage existe alors on le met à jour
+        if (ne.header != -1 && entities[ne.id])
         {
             mtx.lock();
             updateNetworkPlayer(entities[ne.id], ne);
@@ -594,35 +568,37 @@ void t_receive_data_TCP()
             continue;
         }
         
-        //Si on reçoit l'utilisation d'un sort
-        if (nes.header != -1 && entities[nes.id])
-        {
-            mtx.lock();
-            if(entities[nes.id]) entities[nes.id]->setSpell(nes.spellID);
-            mtx.unlock();
-            continue;
-        }
-        
-        //pas besoin de tester le pointeur on le teste dans un if d'avant
-        if (ne.header != -1 && /*!entities[ne.id] && */c->getID() != ne.id) //si c'est le personnage du joueur alors il est déjà mis à sa création au début
+        //Si pas entré dans le if d'avant et qu'on entre ici, alors c'est la connexion d'un joueur
+        if (ne.header != -1) //si c'est le personnage du joueur alors il est déjà mis à sa création au début
         { //connexion on l'ajoute aux listes
-            mtx.lock(); 
+            mtx.lock();
             entities[ne.id] = new Warrior("Teeta", ne.xMap / 100, ne.yMap / 100, ne.id, 1, renderer);
             updateNetworkPlayer(entities[ne.id], ne);
             v_elements[1].push_back(entities[ne.id]);
             v_elements_depth.push_back(entities[ne.id]);
             mtx.unlock();
+            continue;
         }
 
+        //Si on reçoit l'utilisation d'un sort
+        if (nes.header != -1 && entities[nes.id])
+        {
+            mtx.lock();
+            if(entities[nes.id]) entities[nes.id]->setSpell(nes.spellID);
+            cout << entities[nes.id]->getSpellUsed() << endl;
+            mtx.unlock();
+            continue;
+        }
+        
+        //Si on reçoit la mise à jour de faction d'un joueur
         if (nef.header != -1 && entities[nef.id])
         {
             mtx.lock();
             entities[nef.id]->setFaction(nef.faction);
             entities[nef.id]->setHealthImg(c->getFaction(), renderer);
             mtx.unlock();
-            cout << "ENTITY FACTION SET !!" << endl;
+            continue;
         }
-        //cout << "v_elements size: " << v_elements[1].size() << endl;
     }
 }
 
@@ -640,8 +616,8 @@ void updateNetworkPlayer(Entity* e, const uti::NetworkEntity& ne)
     e->setX(c->getX() - (c->getXMap() - e->getXMap()));
     e->setY(c->getY() - (c->getYMap() - e->getYMap()));
     e->countDir = ne.countDir;
-    if (e->getCountDir() != 0) e->setMoving(true);
-    else                       e->setMoving(false);
+    //if (e->getCountDir() != 0) e->setMoving(true);
+    //else                       e->setMoving(false);
     //e->setSpell(ne.spell);
     e->updateBoxes();
     e->update();
@@ -790,6 +766,8 @@ bool compareZ(Element* e1, Element* e2)
 
 void handleLeftClick(SDL_Event& events, thread& t_screenMsg)
 {
+    c->setAAActive(false);
+    c->resetTarget();
     bool targetFound = false;
     for (vector<Element*> v_e : v_elements)
         for (Element* e : v_e)
@@ -806,20 +784,42 @@ void handleRightClick(SDL_Event& events, thread& t_screenMsg)
     bool targetFound = false;
     for (vector<Element*> v_e : v_elements)
         for (Element* e : v_e)
+        {
+            if (dynamic_cast<Entity*>(e) != c && dynamic_cast<Entity*>(e)->getFaction() != c->getFaction() && !c->getSpellUsed())
+            {
+                c->setTarget(dynamic_cast<Entity*>(e));
+                c->setAAActive(true);
+            }
+            else
+            {
+                c->setAAActive(false);
+                c->resetTarget();
+            }
+
             if (dynamic_cast<Entity*>(e) && dynamic_cast<Entity*>(e)->inClickBox(events.button.x, events.button.y))
             {
                 ui->setTargetPortrait(dynamic_cast<Entity*>(e)->getPortraitTexture()); targetFound = true;
                 if (!dynamic_cast<Entity*>(e)->isInClickRange(c->getXMovebox(), c->getYMovebox()))
                 {
-
-                    if (!ui->isScreenMsgVisible()) { if (t_screenMsg.joinable()) t_screenMsg.join(); ui->setScreenMsgVisible(true); t_screenMsg = thread(t_run_screenMsg); }
+                    if (!ui->isScreenMsgVisible())
+                    {
+                        if (t_screenMsg.joinable()) t_screenMsg.join();
+                        ui->setScreenMsgVisible(true);
+                        t_screenMsg = thread(t_run_screenMsg);
+                    }
                     break;
                 }
 
                 if (dynamic_cast<NPC*>(e)) { ui->getQuestBook()->addQuest(dynamic_cast<NPC*>(e)->getPQuest()); dynamic_cast<NPC*>(e)->getPQuest()->setState(2); }
                 break;
             }
-    if (!targetFound) ui->setTargetPortrait(nullptr);
+        }
+    if (!targetFound)
+    {
+        ui->setTargetPortrait(nullptr);
+        c->setAAActive(false);
+        c->resetTarget();
+    }
 }
 
 void resetAllElementsPos()

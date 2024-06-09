@@ -16,7 +16,7 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
 
     this->alive       = true;
     this->moving      = false;
-    this->spellActive = false;
+    //this->spellActive = false;
     this->aaActive    = false;
     this->cancelAA    = false;
 
@@ -81,13 +81,13 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
         }
     }
 
-    spells[AutoAttack::id] = new AutoAttack(renderer);
-    img[AutoAttack::animationID]  = spells[AutoAttack::id]->getImg();
-    text[AutoAttack::animationID] = spells[AutoAttack::id]->getText();
+    spells[uti::SpellID::AA]      = new AutoAttack(renderer);
+    img[AutoAttack::animationID]  = spells[uti::SpellID::AA]->getImg();
+    text[AutoAttack::animationID] = spells[uti::SpellID::AA]->getText();
 
     spells[uti::SpellID::WHIRLWIND] = new Whirlwind(renderer);
-    img[Whirlwind::animationID]    = spells[uti::SpellID::WHIRLWIND]->getImg();
-    text[Whirlwind::animationID]   = spells[uti::SpellID::WHIRLWIND]->getText();
+    img[Whirlwind::animationID]     = spells[uti::SpellID::WHIRLWIND]->getImg();
+    text[Whirlwind::animationID]    = spells[uti::SpellID::WHIRLWIND]->getText();
 
     updateBoxes();
 }
@@ -109,9 +109,9 @@ Entity::~Entity()
     std::cout << "Entity: " << pseudo.getFont().getText() << " cleared !" << std::endl;
 }
 
-void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, bool& sendSpellEffectData, vector<SpellEffect>& spellEffects, chrono::high_resolution_clock::time_point now)
+void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, vector<SpellEffect>& spellEffects, chrono::high_resolution_clock::time_point now)
 {
-    if (!moving && (!spellUsed || (spellUsed && !spellUsed->isMoving()))) return;
+    if (!moving && !spellUsed) return;
 
     xChange = speed * xRate * deltaTime,
     yChange = speed * yRate * deltaTime;
@@ -184,10 +184,6 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
                         cout << "Entity: " << dynamic_cast<Entity*>(e)->getID() << " in range !" << endl;
                         spellEffects.push_back({ dynamic_cast<Entity*>(e)->getID(), spellUsed->getID(), now});
                     }
-                    
-
-                    //sendSpellEffectData = true; uselss on envoie si on trouve un chrono à now
-                    //spellEffects[dynamic_cast<Entity*>(e)] = { 4, std::chrono::high_resolution_clock::now() };
                 }
             }
         }
@@ -199,32 +195,32 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
     {
         if (dir == 0)
             if (step < 9 * animationSpeed)  step++;
-            else                                step = 0;
+            else                            step = 0;
         else if (dir == 1)
             if (step < 11 * animationSpeed) step++;
-            else                                step = 0;
+            else                            step = 0;
         else if (dir == 2)
             if (step < 8 * animationSpeed)  step++;
-            else                                step = 0;
+            else                            step = 0;
         else if (dir == 3)
             if (step < 11 * animationSpeed) step++;
-            else                                step = 0;
+            else                            step = 0;
         else if (dir == 0.5)
             if (step < 11 * animationSpeed) step++;
-            else                                step = 0;
+            else                            step = 0;
         else if (dir == 1.5)
             if (step < 11 * animationSpeed) step++;
-            else                                step = 0;
+            else                            step = 0;
         else if (dir == 2.5)
             if (step < 11 * animationSpeed) step++;
-            else                                 step = 0;
+            else                            step = 0;
         else if (dir == 3.5)
             if (step < 11 * animationSpeed) step++;
-            else                                step = 0;
+            else                            step = 0;
     }
     else
     {
-        if(spellUsed) spellUsed->run(v_elements, v_elements_solid, *this, nullptr);
+        if(spellUsed) spellUsed->run(*this);
         if (!spellUsed) sendSpellData = true;//si pointeur pas alloué alors on vient de le clear donc spell terminé
     }
 
@@ -290,22 +286,22 @@ void Entity::update()
     
     switch (countDir)
     {
-        case 0 : xRate =    0; yRate =    0;            if(inAction) break; moving = false; step = 0; break;
-        case 1 : xRate =    0; yRate =   -1; dir =   0; if(inAction) break; moving = true;            break;
-        case 3 : xRate =    1; yRate =    0; dir =   1; if(inAction) break; moving = true;            break;
-        case 6 : xRate =    0; yRate =    1; dir =   2; if(inAction) break; moving = true;            break;
-        case 11: xRate =   -1; yRate =    0; dir =   3; if(inAction) break; moving = true;            break;
-        case 4 : xRate =  0.5; yRate = -0.5; dir = 0.5; if(inAction) break; moving = true;            break;
-        case 7 : xRate =    0; yRate =    0;            if(inAction) break; moving = false; step = 0; break;
-        case 12: xRate = -0.5; yRate = -0.5; dir = 3.5; if(inAction) break; moving = true;            break;
-        case 9 : xRate =  0.5; yRate =  0.5; dir = 1.5; if(inAction) break; moving = true;            break;
-        case 14: xRate =    0; yRate =    0;            if(inAction) break; moving = false; step = 0; break;
-        case 17: xRate = -0.5; yRate =  0.5; dir = 2.5; if(inAction) break; moving = true;            break;
-        case 10: xRate =    1; yRate =    0; dir =   1; if(inAction) break; moving = true;            break;
-        case 15: xRate =    0; yRate =   -1; dir =   0; if(inAction) break; moving = true;            break;
-        case 18: xRate =   -1; yRate =    0; dir =   3; if(inAction) break; moving = true;            break;
-        case 20: xRate =    0; yRate =    1; dir =   2; if(inAction) break; moving = true;            break;
-        case 21: xRate =    0; yRate =    0;            if(inAction) break; moving = false; step = 0; break;
+        case 0 : xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; step = 0; break;
+        case 1 : xRate =    0; yRate =   -1; dir =   0; if(spellUsed) break; moving = true;            break;
+        case 3 : xRate =    1; yRate =    0; dir =   1; if(spellUsed) break; moving = true;            break;
+        case 6 : xRate =    0; yRate =    1; dir =   2; if(spellUsed) break; moving = true;            break;
+        case 11: xRate =   -1; yRate =    0; dir =   3; if(spellUsed) break; moving = true;            break;
+        case 4 : xRate =  0.5; yRate = -0.5; dir = 0.5; if(spellUsed) break; moving = true;            break;
+        case 7 : xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; step = 0; break;
+        case 12: xRate = -0.5; yRate = -0.5; dir = 3.5; if(spellUsed) break; moving = true;            break;
+        case 9 : xRate =  0.5; yRate =  0.5; dir = 1.5; if(spellUsed) break; moving = true;            break;
+        case 14: xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; step = 0; break;
+        case 17: xRate = -0.5; yRate =  0.5; dir = 2.5; if(spellUsed) break; moving = true;            break;
+        case 10: xRate =    1; yRate =    0; dir =   1; if(spellUsed) break; moving = true;            break;
+        case 15: xRate =    0; yRate =   -1; dir =   0; if(spellUsed) break; moving = true;            break;
+        case 18: xRate =   -1; yRate =    0; dir =   3; if(spellUsed) break; moving = true;            break;
+        case 20: xRate =    0; yRate =    1; dir =   2; if(spellUsed) break; moving = true;            break;
+        case 21: xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; step = 0; break;
         //default:
     }
 
@@ -315,10 +311,24 @@ void Entity::update()
         yRate = uti::pixDir[dir].yRate;
     }
 
-    if      (!spellActive && moving == false && animationID != 0) animationID = 0;
-    else if (!spellActive && moving == true && animationID  != 1) animationID = 1;
+    if      (!spellUsed && moving == false && animationID != 0) animationID = 0;
+    else if (!spellUsed && moving == true && animationID  != 1) animationID = 1;
 
     //cout << spellActive << " ANIMATIONID: " << animationID << endl;
+}
+
+void Entity::setSpell(short spellID)
+{
+    if (spellID == 0) 
+    { 
+        if (this->spellUsed) this->spellUsed->resetSpell(*this); 
+        this->spellUsed   = nullptr; 
+        this->animationID = 1;
+        this->step        = 0;
+        return; 
+    } 
+
+    this->spellUsed = spells[spellID];
 }
 
 void Entity::setHealthImg(short playerFaction, SDL_Renderer* renderer)

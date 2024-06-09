@@ -37,6 +37,7 @@ namespace uti {
 	};
 
 	enum SpellID {
+		AA		  = 3,
 		WHIRLWIND = 4
 	};
 

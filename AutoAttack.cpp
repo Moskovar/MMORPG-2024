@@ -4,10 +4,13 @@
 
 AutoAttack::AutoAttack(SDL_Renderer* renderer) : Spell("Auto attack")
 {
+    id = uti::SpellID::AA;
+    cd = 1000;
+
     string src = "";
     for (float i = 0; i < 4; i += 0.5)
     {
-        for (int j = 0; j < 22; j++)
+        for (int j = 0; j < 17; j++)
         {
             if (i == 0) src = "img/entity/character/warrior/back/aa/";
             else if (i == 0.5 || i == 1 || i == 1.5) src = "img/entity/character/warrior/right/aa/";
@@ -25,32 +28,49 @@ AutoAttack::AutoAttack(SDL_Renderer* renderer) : Spell("Auto attack")
     }
 }
 
-void AutoAttack::run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& self, Entity* enemy)
+void AutoAttack::run(Entity& player)
 {
-    self.setAnimationID(this->animationID);
-    self.setAAActive(true);
-    for (int i = 0; i < 17; i++)
+    if (step == 0)
     {
-        for(int p = 0; p < 25; p++)
-        {
-            if (self.getCancelAA()) { self.setAAActive(false); return; }
-            Sleep(1);
-        }
-        //cout << e.step << endl;
-        self.setStep((i % 21) * self.getAnimationSpeed());
-        if ((self.getDir() == 0 || self.getDir() == 2) && i == 16) break; else self.increaseStep();
+        player.setAnimationID(animationID);
+        player.setAnimationSpeed(10);
     }
-    if (self.isMoving()) self.setAnimationID(1);
-    else                 self.setAnimationID(0);
-    self.setStep(0);
+
+    step++;
+    player.setStep(step);
+    //cout << player.getAnimationID() << " : " << player.getStep() << " : " << player.getDir() << endl;
+
+    if (step == 16 * player.getAnimationSpeed())
+    {
+        step = 0;
+        player.setStep(0);
+        player.setSpell();
+        player.setAnimationSpeed(15);
+    }
 }
 
-void AutoAttack::runOthers(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& player, Entity* enemy)
+void AutoAttack::runOthers(Entity& player)
 {
+    if (!player.isAAActive())
+    {
+        step = 0;
+        player.setAAActive(true);
+        player.setAnimationID(animationID);
+        player.setAnimationSpeed(10);
+    }
+
+    step++;
+    player.setStep(step);
+    //cout << player.getAnimationID() << " : " << player.getStep() << " : " << player.getDir() << endl;
 }
 
-void AutoAttack::resetSpell(Entity& player)
+void AutoAttack::resetSpell(Entity& player)//why ici ça marche alors que si dans runOthers ça bug ??
 {
+    step = 0;
+    player.setStep(0);
+    player.setSpell();
+    player.setAAActive(false);
+    player.setAnimationSpeed(15);
 }
 
 bool AutoAttack::isInRange(uti::Circle player, uti::Circle enemy)

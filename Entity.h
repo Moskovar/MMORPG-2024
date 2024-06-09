@@ -36,7 +36,7 @@ class Entity : public Element
 
 		virtual void draw(SDL_Renderer* renderer) = 0;
 
-		void move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, bool& sendSpellEffectData, vector<SpellEffect>& spellEffects, chrono::high_resolution_clock::time_point now);
+		void move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, vector<SpellEffect>& spellEffects, chrono::high_resolution_clock::time_point now);
 
 		Spell* getSpell(int i)			  { return spells[i];												  }
 		Spell* getSpellUsed() { return this->spellUsed; }
@@ -67,7 +67,7 @@ class Entity : public Element
 		short      	 getAnimationID()     { return this->animationID;										  }
 		bool  	     isAlive()		      { return this->alive;											      }
 		bool      	 isMoving()		      { return this->moving;											  }
-		bool      	 isSpellActive()      { return this->spellActive;										  }
+		//bool      	 isSpellActive()      { return this->spellActive;										  }
 		bool      	 isAAActive()	      { return this->aaActive;											  }
 		bool		 getCancelAA()        { return cancelAA;												  }
 		SDL_Texture* getPortraitTexture() { return textPortrait;											  }
@@ -77,6 +77,7 @@ class Entity : public Element
 		float getYChange()				  { return this->yChange;											  }	
 		short getHealth() { return this->health; }
 		short getFaction() { return this->faction; }
+		Entity* getTarget() { return target; }
 
 
 		void setAnimationSpeed(short animationSpeed) { this->animationSpeed = animationSpeed; }
@@ -98,16 +99,18 @@ class Entity : public Element
 		void setAlive(bool alive)			 { this->alive = alive;									   }
 		void setMoving(bool state)			 { this->moving = state;								   }
 		void update();																				   
-		void setAAActive(bool state)		 { this->aaActive = state;								   }
+		void setAAActive(bool state)        { this->aaActive = state; spells[uti::SpellID::AA]->resetStep(); }
 		void setCancelAA(bool state)		 { this->cancelAA = state;								   }
 		void setAnimationID(int animationID) { this->animationID = animationID;						   }
-		void setSpellActive(bool state)      { this->spellActive = state;							   }
+		//void setSpellActive(bool state)      { this->spellActive = state;							   }
 		void setXChange(float xChange)		 { this->xChange = xChange;								   }
 		void setYChange(float yChange)		 { this->yChange = yChange;								   }
-		void setSpell(short spellID) { if (spellID == 0) { if(this->spellUsed) this->spellUsed->resetSpell(*this); this->spellUsed = nullptr; this->animationID = 1; return; } this->spellUsed = spells[spellID]; }
+		void setSpell(short spellID);
 		void setSpell() { this->spellUsed = nullptr; }
 		void setFaction(short faction) { this->faction = faction; }
 		void setHealthImg(short playerFaction, SDL_Renderer* renderer);
+		void setTarget(Entity* target) { this->target = target; }
+		void resetTarget() { this->target = nullptr; }
 
 		void setPos(float x, float y);
 
@@ -146,7 +149,7 @@ class Entity : public Element
 		short category = 0, step = 0, xMovebox = 0, yMovebox = 0, faction = 0;//faction 0 1 2 neutral fac1 fac2
 		uti::Circle centerBox = { { 0, 0 }, 0 };
 		float dir = 0.0f, xRate = 0.0f, yRate = 0.0f, speed = 0.0f;
-		bool alive = true, moving = false, spellActive = false, aaActive = false, cancelAA = false;
+		bool alive = true, moving = false/*, spellActive = false*/, aaActive = false, cancelAA = false;
 
 		short animationID = 0;
 		map <short, map<float, SDL_Surface*[30]>> img;
@@ -154,6 +157,7 @@ class Entity : public Element
 
 		SDL_Rect clickBox{ 0, 0, 0, 0 };
 
+		Entity* target = nullptr;
 		map<short, Spell*> spells;
 		Spell* spellUsed;
 };

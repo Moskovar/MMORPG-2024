@@ -4,6 +4,8 @@
 Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
 {
     id = uti::SpellID::WHIRLWIND;
+    cd = 5000;
+    cancelable = false;
 
     moving = true;
     boostSpeed = 2;
@@ -30,11 +32,10 @@ Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
     }
 }
 
-void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& player, Entity* enemy)
+void Whirlwind::run(Entity& player)
 {
-    if (!player.isSpellActive())
+    if (step == 0)
     {
-        player.setSpellActive(true);
         player.setAnimationID(animationID);
         player.setAnimationSpeed(20);
     }
@@ -48,17 +49,15 @@ void Whirlwind::run(vector<Element*>& v_elements, vector<Element*> v_elements_so
         step = 0;
         player.setStep(0);
         player.setSpell();
-        player.setSpellActive(false);
         player.setCancelAA(false);
         player.setAnimationSpeed(15);
     }
 }
 
-void Whirlwind::runOthers(vector<Element*>& v_elements, vector<Element*> v_elements_solid, Entity& player, Entity* enemy)
+void Whirlwind::runOthers(Entity& player)
 {
-    if (!player.isSpellActive())
+    if (step == 0)
     {
-        player.setSpellActive(true);
         player.setAnimationID(animationID);
         player.setAnimationSpeed(20);
     }
@@ -72,7 +71,6 @@ void Whirlwind::resetSpell(Entity& player)
 {
     step = 0;
     player.setStep(0);
-    player.setSpellActive(false);
     player.setCancelAA(false);
     player.setAnimationSpeed(15);
 }
