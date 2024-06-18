@@ -32,7 +32,7 @@ void AutoAttack::run(Entity& player)
 {
     if (step == 0)
     {
-        player.setAnimationID(animationID);
+        player.setAnimationID(id);
         player.setAnimationSpeed(10);
     }
 
@@ -55,7 +55,7 @@ void AutoAttack::runOthers(Entity& player)
     {
         step = 0;
         player.setAAActive(true);
-        player.setAnimationID(animationID);
+        player.setAnimationID(uti::SpellID::AA);
         player.setAnimationSpeed(10);
     }
 
@@ -75,5 +75,5 @@ void AutoAttack::resetSpell(Entity& player)//why ici ça marche alors que si dans
 
 bool AutoAttack::isInRange(uti::Circle player, uti::Circle enemy)
 {
-    return false;
+    return (abs(player.center.x - enemy.center.x) + abs(player.center.y - enemy.center.y)) <= 100;
 }

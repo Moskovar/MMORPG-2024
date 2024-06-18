@@ -85,8 +85,9 @@ int main(int argc, char* argv[])
     uti::NetworkEntity ne         = { 0, 0, 0, 0, 0 };
     uti::NetworkEntitySpell nes   = {};
     uti::NetworkEntityFaction nef = {};
-    co.recvTCP(ne, nes, nef, run);
-    co.recvTCP(ne, nes, nef, run);
+    uti::NetworkEntityTarget net  = {};
+    co.recvTCP(ne, nes, nef, net, run);
+    co.recvTCP(ne, nes, nef, net, run);
     if (ne.id == -1) { cout << "Le serveur est plein" << endl; exit(1); }//changer avec une fermeture prope du socket ??
 
     //if (SDL_SetHint(SDL_HINT_RENDER_VSYNC, "1") == SDL_FALSE) {
@@ -235,7 +236,7 @@ int main(int argc, char* argv[])
                     { 
                         if ((!c->getSpellUsed() || (c->getSpellUsed() && c->getSpellUsed()->isCancelable())) && c->getSpell(uti::SpellID::WHIRLWIND)->isAvailable())//Si pas de spell actif ou un spell interruptible et le spell est dispo
                         { 
-                            c->setAAActive(false); 
+                            c->setAAActive(false); //créer fct useSpell
                             c->setSpell(uti::SpellID::WHIRLWIND);  
                             co.sendNESTCP(c->getNES(uti::SpellID::WHIRLWIND)); 
                             c->getSpell(uti::SpellID::WHIRLWIND)->start_cd(); 
@@ -243,7 +244,14 @@ int main(int argc, char* argv[])
                     }
                     if (events.key.keysym.sym == SDLK_e) 
                     { 
-                         
+                        if ((!c->getSpellUsed() || (c->getSpellUsed() && c->getSpellUsed()->isCancelable())) && c->getSpell(uti::SpellID::PUSH)->isAvailable() 
+                           && c->getTarget() && c->getTarget()->getFaction() != c->getFaction() && c->getSpell(uti::SpellID::PUSH)->isInRange(c->getCenterBox(), c->getTarget()->getCenterBox()) && c->isInGoodDirection())//Si pas de spell actif ou un spell interruptible et le spell est dispo
+                        {
+                            c->setAAActive(false);
+                            c->setSpell(uti::SpellID::PUSH);
+                            co.sendNESTCP(c->getNES(uti::SpellID::PUSH));
+                            c->getSpell(uti::SpellID::PUSH)->start_cd();
+                        }
                     }
                     if (events.key.keysym.sym == SDLK_y) {  }
 
@@ -397,8 +405,8 @@ void t_move_player()
             if(c->getSpellUsed()) co.sendNESETCP(c->getNESE(c->getSpellUsed()->getID(), spellEffects[spellEffects.size() - 1].entityID));
         }
 
-        //on check si AA active, si CD OK et si distance OK
-        if (c->isAAActive() && c->getSpell(uti::SpellID::AA)->isAvailable() && c->getTarget()->isInClickRange(c->getXCenterBox(), c->getYCenterBox()))
+        //on check si AA active, si CD OK et si distance OK + si good direction
+        if (c->isAAActive() && c->getSpell(uti::SpellID::AA)->isAvailable() && c->getSpell(uti::SpellID::AA)->isInRange(c->getCenterBox(), c->getTarget()->getCenterBox()) && c->isInGoodDirection())
         {
             c->setSpell(uti::SpellID::AA);
             co.sendNESTCP(c->getNES(uti::SpellID::AA));
@@ -431,6 +439,7 @@ void t_move_players()
                 Entity* e_cast = dynamic_cast<Entity*>(e);
 
                 e_cast->update();
+                e_cast->updateBoxes();
                 if (e_cast->getXRate() == 0 && e_cast->getYRate() == 0 && !e_cast->getSpellUsed()) { e_cast->resetStep(); continue; }
 
                 bool collision = false;
@@ -453,7 +462,7 @@ void t_move_players()
                     e_cast->setX(c->getX() - (c->getXMap() - e_cast->getXMap()));
                     e_cast->setY(c->getY() - (c->getYMap() - e_cast->getYMap()));
                     
-                    e_cast->updateBoxes();
+                    //e_cast->updateBoxes();
                 }
 
                 //cout << e_cast->getAnimationID() << endl;
@@ -510,16 +519,18 @@ void t_receive_data_udp()
 
 void t_receive_data_TCP()
 {
-    uti::NetworkEntity ne = { -1, 0, 0, 0, 0, 0 };
-    uti::NetworkEntitySpell nes = { -1, 0, 0 };
+    uti::NetworkEntity        ne  = { -1, 0, 0, 0, 0, 0 };
+    uti::NetworkEntitySpell   nes = { -1, 0, 0 };
     uti::NetworkEntityFaction nef = { -1, 0, 0 };
+    uti::NetworkEntityTarget  net = { -1, 0, 0 };
 
     while (run)
     {
         ne.header  = -1;
         nes.header = -1;
         nef.header = -1;
-        if (co.recvTCP(ne, nes, nef, run) && run);// cout << "TCP NE received: " << ne.id << " : " << (float)ne.xMap / 100 << " : " << (float)ne.yMap / 100 << " : " << ne.timestamp << endl;//pour le debug
+        net.header = -1;
+        if (co.recvTCP(ne, nes, nef, net, run) && run);// cout << "TCP NE received: " << ne.id << " : " << (float)ne.xMap / 100 << " : " << (float)ne.yMap / 100 << " : " << ne.timestamp << endl;//pour le debug
         else { run = SDL_FALSE; break;  }
         
         //Si c'est une déconnexion
@@ -590,6 +601,12 @@ void t_receive_data_TCP()
             continue;
         }
         
+        //Si on reçoit le changement de target d'un joueur
+        if (net.header != -1 && entities[net.id])
+        {
+            entities[net.id]->setTarget(entities[net.targetID]);
+        }
+
         //Si on reçoit la mise à jour de faction d'un joueur
         if (nef.header != -1 && entities[nef.id])
         {
@@ -785,20 +802,19 @@ void handleRightClick(SDL_Event& events, thread& t_screenMsg)
     for (vector<Element*> v_e : v_elements)
         for (Element* e : v_e)
         {
-            if (dynamic_cast<Entity*>(e) != c && dynamic_cast<Entity*>(e)->getFaction() != c->getFaction() && !c->getSpellUsed())
-            {
-                c->setTarget(dynamic_cast<Entity*>(e));
-                c->setAAActive(true);
-            }
-            else
-            {
-                c->setAAActive(false);
-                c->resetTarget();
-            }
-
             if (dynamic_cast<Entity*>(e) && dynamic_cast<Entity*>(e)->inClickBox(events.button.x, events.button.y))
             {
-                ui->setTargetPortrait(dynamic_cast<Entity*>(e)->getPortraitTexture()); targetFound = true;
+                ui->setTargetPortrait(dynamic_cast<Entity*>(e)->getPortraitTexture());
+                targetFound = true;
+                c->setTarget(dynamic_cast<Entity*>(e));
+                co.sendNETTCP({ uti::Header::NET, c->getID(), c->getTarget()->getID() });
+                if(dynamic_cast<Entity*>(e) != c && dynamic_cast<Entity*>(e)->getFaction() != c->getFaction() && !c->getSpellUsed())
+                    c->setAAActive(true);
+                else
+                {
+                    c->setAAActive(false);
+                    c->resetTarget();
+                }
                 if (!dynamic_cast<Entity*>(e)->isInClickRange(c->getXMovebox(), c->getYMovebox()))
                 {
                     if (!ui->isScreenMsgVisible())
@@ -824,6 +840,11 @@ void handleRightClick(SDL_Event& events, thread& t_screenMsg)
 
 void resetAllElementsPos()
 {
-    for (vector<Element*> v_e : v_elements) for (Element* e : v_e) e->resetPos();
+    for (vector<Element*> v_e : v_elements) 
+        for (Element* e : v_e)
+        {
+            e->resetPos();
+            //if (dynamic_cast<Entity*>(e)) dynamic_cast<Entity*>(e)->updateBoxes();
+        }
   m.resetPos();
 }

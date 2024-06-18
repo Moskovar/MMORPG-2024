@@ -81,13 +81,17 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
         }
     }
 
-    spells[uti::SpellID::AA]      = new AutoAttack(renderer);
-    img[AutoAttack::animationID]  = spells[uti::SpellID::AA]->getImg();
-    text[AutoAttack::animationID] = spells[uti::SpellID::AA]->getText();
+    spells[uti::SpellID::AA] = new AutoAttack(renderer);
+    img[uti::SpellID::AA]    = spells[uti::SpellID::AA]->getImg();
+    text[uti::SpellID::AA]   = spells[uti::SpellID::AA]->getText();
 
     spells[uti::SpellID::WHIRLWIND] = new Whirlwind(renderer);
-    img[Whirlwind::animationID]     = spells[uti::SpellID::WHIRLWIND]->getImg();
-    text[Whirlwind::animationID]    = spells[uti::SpellID::WHIRLWIND]->getText();
+    img[uti::SpellID::WHIRLWIND]    = spells[uti::SpellID::WHIRLWIND]->getImg();
+    text[uti::SpellID::WHIRLWIND]   = spells[uti::SpellID::WHIRLWIND]->getText();
+
+    spells[uti::SpellID::PUSH] = new Push(renderer);
+    img[uti::SpellID::PUSH] = spells[uti::SpellID::PUSH]->getImg();
+    text[uti::SpellID::PUSH] = spells[uti::SpellID::PUSH]->getText();
 
     updateBoxes();
 }
@@ -155,7 +159,7 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
     updateBoxes();
 
 
-    if (spellUsed)
+    if (spellUsed && spellUsed->isAoe())
     {
         for (Element* e : v_elements)
         {
@@ -232,6 +236,61 @@ bool Entity::inClickBox(int x, int y)
     return x > clickBox.x && x < clickBox.x + clickBox.w && y > clickBox.y && y < clickBox.y + clickBox.h;
 }
 
+bool Entity::isInGoodDirection()
+{
+    short xDiff = centerBox.center.x - target->getCenterBox().center.x, // > 0 target à gauche, < 0 target à droite
+          yDiff = centerBox.center.y - target->getCenterBox().center.y;// > 0 target en haut  , < 0 target en bas
+
+
+    if (xDiff >= 0 && yDiff >= 0)//quart supérieur gauche
+    {
+        if (dir == 0 || dir == 3.5 || dir == 3.0)
+        {
+            if      (xDiff <= 200) dir = 0;
+            else if (xDiff >= 500) dir = 3.0;
+            else                   dir = 3.5;
+
+            return true;
+        }
+        return false;
+    }
+    else if (xDiff <= 0 && yDiff >= 0)//quart supérieur droit
+    {
+        if (dir == 0 || dir == 0.5 || dir == 1.0)
+        {
+            if      (xDiff >= -200) dir = 0;
+            else if (xDiff <= -500) dir = 1.0;
+            else                    dir = 0.5;
+            return true;
+        }
+        return false;
+    }
+    else if (xDiff <= 0 && yDiff <= 0)//quart inférieur droit
+    {
+        if (dir == 1.0 || dir == 1.5 || dir == 2)
+        {
+            if      (xDiff >= -200) dir = 2.0;
+            else if (xDiff <= -200) dir = 1.0;
+            else                    dir = 1.5;
+            return true;
+        }
+        return false;
+    }
+    else if (xDiff >= 0 && yDiff <= 0)//quart inférieur gauche
+    {
+        if (dir == 2 || dir == 2.5 || dir == 3.0)
+        {
+            if      (xDiff <= 200) dir = 2.0;
+            else if (xDiff >= 500) dir = .0;
+            else                   dir = 2.5;
+            return true;
+        }
+
+        return false;
+    }
+    return false;
+}
+
 void Entity::setHealth(int health)
 { 
     this->health = health;	
@@ -305,11 +364,13 @@ void Entity::update()
         //default:
     }
 
-    if (inAction)
+    /*if (inAction)
     {
         xRate = uti::pixDir[dir].xRate;
         yRate = uti::pixDir[dir].yRate;
-    }
+    }*/
+
+    if (spellUsed) spellUsed->update(*this);
 
     if      (!spellUsed && moving == false && animationID != 0) animationID = 0;
     else if (!spellUsed && moving == true && animationID  != 1) animationID = 1;

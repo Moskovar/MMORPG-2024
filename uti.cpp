@@ -1,5 +1,7 @@
 #include "uti.h"
 
+class Entity;
+
 namespace uti {
     map<int, map<int, string>> categories = {
         {

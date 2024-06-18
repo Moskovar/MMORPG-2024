@@ -30,4 +30,6 @@ void Character::draw(SDL_Renderer* renderer)
     SDL_RenderCopy(renderer, textHealth, NULL, &posHealth);
     SDL_RenderCopy(renderer, textBar, NULL, &posBarH);
 	SDL_RenderCopy(renderer, text[animationID][dir][step / animationSpeed], NULL, &this->pos);
+
+    for (auto it = spells.begin(); it != spells.end(); ++it) it->second->draw(renderer);
 }

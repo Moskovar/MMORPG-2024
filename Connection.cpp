@@ -1,6 +1,7 @@
 #include "Connection.h"
 #include <chrono>
 #include <thread>
+#include "Addr.h"
 
 Connection::Connection()//gérer les erreurs avec des exceptions
 {
@@ -18,8 +19,8 @@ Connection::Connection()//gérer les erreurs avec des exceptions
 
     //--- Définition de l'adresse du serveur TCP ---//
     tcpServerAddr.sin_family = AF_INET;
-    tcpServerAddr.sin_port = htons(9090);
-    inet_pton(AF_INET, "127.0.0.1", &tcpServerAddr.sin_addr);
+    tcpServerAddr.sin_port = htons(35500);
+    inet_pton(AF_INET, ADDR, &tcpServerAddr.sin_addr);
 
     //--- Connexion au serveur TCP ---//
     if (connect(tcpSocket, (sockaddr*)&tcpServerAddr, sizeof(tcpServerAddr)) == SOCKET_ERROR) {
@@ -113,6 +114,22 @@ void Connection::sendNESETCP(uti::NetworkEntitySpellEffect nese)
     }
 }
 
+void Connection::sendNETTCP(uti::NetworkEntityTarget net)
+{
+    if (tcpSocket == INVALID_SOCKET) {
+        std::cerr << "Invalid TCP socket." << std::endl;
+        return;
+    }
+    net.header   = htons(net.header);
+    net.id       = htons(net.id);
+    net.targetID = htons(net.targetID);
+
+    int iResult = ::send(tcpSocket, (const char*)&net, sizeof(net), 0);
+    if (iResult == SOCKET_ERROR) {
+        std::cerr << "send failed: " << WSAGetLastError() << std::endl;
+    }
+}
+
 void Connection::sendNEUDP(uti::NetworkEntity& ne)
 {
     ne.id = htons(ne.id);
@@ -130,7 +147,7 @@ void Connection::sendNEUDP(uti::NetworkEntity& ne)
     }
 }
 
-bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, uti::NetworkEntityFaction& nef, SDL_bool& run)
+bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, uti::NetworkEntityFaction& nef, uti::NetworkEntityTarget& net, SDL_bool& run)
 {
     int bytesReceived = 0;
     int totalReceived = 0;
@@ -166,6 +183,7 @@ bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, u
     if      (header == 0) dataSize = sizeof(uti::NetworkEntity);
     else if (header == 1) dataSize = sizeof(uti::NetworkEntitySpell);
     else if (header == 3) dataSize = sizeof(uti::NetworkEntityFaction);
+    else if (header == 4) dataSize = sizeof(uti::NetworkEntityTarget);
 
     // Réception des données restantes
     totalReceived = sizeof(header); // Réinitialiser totalReceived pour recevoir les données après le header
@@ -216,6 +234,14 @@ bool Connection::recvTCP(uti::NetworkEntity& ne, uti::NetworkEntitySpell& nes, u
         nef.id      = ntohs(nef.id);
         nef.faction = ntohs(nef.faction);
         //cout << "Received H: " << nef.header << " : " << nef.id << " : faction-> " << nef.faction << endl;
+    }
+    else if (header == 4)
+    {
+        std::memcpy(&net, buffer, dataSize);
+        net.id       = ntohs(net.id);
+        net.targetID = ntohs(net.targetID);
+
+        cout << "Received H: " << net.header << " : " << net.id << " : targetID-> " << net.targetID << endl;
     }
 
     return true;

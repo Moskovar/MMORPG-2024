@@ -3,10 +3,11 @@
 
 Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
 {
+    spell_icon = SpellIcon("warrior", this, renderer);
     id = uti::SpellID::WHIRLWIND;
     cd = 5000;
     cancelable = false;
-
+    aoe = true;
     moving = true;
     boostSpeed = 2;
     range = 50;
@@ -36,7 +37,7 @@ void Whirlwind::run(Entity& player)
 {
     if (step == 0)
     {
-        player.setAnimationID(animationID);
+        player.setAnimationID(id);
         player.setAnimationSpeed(20);
     }
 
@@ -58,13 +59,12 @@ void Whirlwind::runOthers(Entity& player)
 {
     if (step == 0)
     {
-        player.setAnimationID(animationID);
+        player.setAnimationID(id);
         player.setAnimationSpeed(20);
     }
 
     step++;
     player.setStep((step % 20) * player.getAnimationSpeed());
-    //if (step % 20 == 0) cout << player.getAnimationID() << endl;//cout << player.getDir() << " : " << step << endl;
 }
 
 void Whirlwind::resetSpell(Entity& player)
@@ -78,4 +78,10 @@ void Whirlwind::resetSpell(Entity& player)
 bool Whirlwind::isInRange(uti::Circle player, uti::Circle enemy)
 {
     return uti::doCirclesIntersect(player, enemy);
+}
+
+void Whirlwind::update(Entity& p)
+{
+    p.setXRate(uti::pixDir[p.getDir()].xRate);
+    p.setYRate(uti::pixDir[p.getDir()].yRate);
 }

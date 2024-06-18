@@ -33,12 +33,14 @@ namespace uti {
 		NE = 0,
 		NES = 1,
 		NESE = 2,
-		NEF = 3
+		NEF = 3,
+		NET = 4
 	};
 
 	enum SpellID {
 		AA		  = 3,
-		WHIRLWIND = 4
+		WHIRLWIND = 4,
+		PUSH      = 5
 	};
 
 	struct MoveRate {//utile ??
@@ -47,7 +49,7 @@ namespace uti {
 
 #pragma pack(push, 1)
 	struct NetworkEntity {
-		short header = 0;
+		short header = Header::NE;
 		short id    = 0, countDir = 0, hp = 0;
 		int   xMap  = 0, yMap     = 0;
 		uint64_t timestamp; // En microsecondes depuis l'epoch
@@ -56,36 +58,50 @@ namespace uti {
 
 #pragma pack(push, 1)
 	struct NetworkEntitySpell {
-		short header = 1;
+		short header = Header::NES;
 		short id = 0, spellID = 0;
 	};
 #pragma pack(pop)
 
 #pragma pack(push, 1)
 	struct NetworkEntitySpellEffect {
-		short header = 2;
+		short header = Header::NESE;
 		short id = 0, spellID = 0;
 	};
 #pragma pack(pop)
 
 #pragma pack(push, 1)
 	struct NetworkEntityFaction {
-		short header = 3;
+		short header = Header::NEF;
 		short id = 0, faction = 1;
+	};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+	struct NetworkEntityTarget {
+		short header = Header::NET;
+		short id = 0, targetID = -1;
 	};
 #pragma pack(pop)
 
 	uint64_t getCurrentTimestamp();
 	
 	extern map<int, map<int, string>> categories;
-	extern map<float, MoveRate> pixDir;//useless??
-
-	Uint32 get_pixel(SDL_Surface* surface, int x, int y);
+	extern map<float, MoveRate> pixDir;
 
 	// Structure pour représenter un point
 	struct Point {
 		short x;
 		short y;
+
+		// Surcharge de l'opérateur !=
+		bool operator!=(const Point& other) const {
+			return x != other.x || y != other.y;
+		}
+
+		bool operator==(const Point& other) const {
+			return x == other.x && y == other.y;
+		}
 	};
 
 	// Structure pour représenter un cercle
@@ -98,5 +114,6 @@ namespace uti {
 	bool isPointInCircle(const short x, const short y, const short circleCenterX, const short circleCenterY, const short circleRadius);
 	// Fonction pour déterminer si deux cercles se croisent
 	bool doCirclesIntersect(const Circle& c1, const Circle& c2);
+	Uint32 get_pixel(SDL_Surface* surface, int x, int y);
 
 }

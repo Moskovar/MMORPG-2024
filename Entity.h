@@ -13,6 +13,7 @@
 #include "Pseudo.h"
 #include "Whirlwind.h"
 #include "AutoAttack.h"
+#include "Push.h"
 //faire un fichier avec tous les includes par classe de personnage pour ne pas avoir à tout include ??
 
 #define IMG_SIZE 16
@@ -78,6 +79,9 @@ class Entity : public Element
 		short getHealth() { return this->health; }
 		short getFaction() { return this->faction; }
 		Entity* getTarget() { return target; }
+		uti::Point getStaticSpellTarget() { return staticSpellTarget; }
+		bool isInGoodDirection();
+		
 
 
 		void setAnimationSpeed(short animationSpeed) { this->animationSpeed = animationSpeed; }
@@ -105,12 +109,15 @@ class Entity : public Element
 		//void setSpellActive(bool state)      { this->spellActive = state;							   }
 		void setXChange(float xChange)		 { this->xChange = xChange;								   }
 		void setYChange(float yChange)		 { this->yChange = yChange;								   }
+		void setXRate(float xRate) { this->xRate = xRate; }
+		void setYRate(float yRate) { this->yRate = yRate; }
 		void setSpell(short spellID);
 		void setSpell() { this->spellUsed = nullptr; }
 		void setFaction(short faction) { this->faction = faction; }
 		void setHealthImg(short playerFaction, SDL_Renderer* renderer);
 		void setTarget(Entity* target) { this->target = target; }
 		void resetTarget() { this->target = nullptr; }
+		void setStaticSpellTarget(uti::Point p) { this->staticSpellTarget = p; }
 
 		void setPos(float x, float y);
 
@@ -158,6 +165,7 @@ class Entity : public Element
 		SDL_Rect clickBox{ 0, 0, 0, 0 };
 
 		Entity* target = nullptr;
+		uti::Point staticSpellTarget = { 0, 0 };
 		map<short, Spell*> spells;
 		Spell* spellUsed;
 };

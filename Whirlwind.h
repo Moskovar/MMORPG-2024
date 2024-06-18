@@ -11,11 +11,10 @@ class Whirlwind : public Spell
 public:
 	Whirlwind(SDL_Renderer* renderer);
 	void run(Entity& e) override;
-	virtual void runOthers (Entity& player) override;
-	virtual void resetSpell(Entity& player) override;
+	void runOthers (Entity& player) override;
+	void resetSpell(Entity& player) override;
 	bool isInRange(uti::Circle player, uti::Circle enemy) override;
-
-	static const short animationID = 4;
+	void update(Entity& p) override;
 
 private:
 	
