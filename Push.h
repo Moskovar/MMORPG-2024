@@ -5,7 +5,7 @@
 class Push : public Spell
 {
 	public:
-		Push(SDL_Renderer* renderer);
+		Push(SDL_Renderer* renderer, bool drawUI);
 		void run(Entity& player) override;
 		void runOthers(Entity& player) override;
 		void resetSpell(Entity& player) override;

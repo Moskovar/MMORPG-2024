@@ -1,9 +1,10 @@
 #include "Push.h"
 
-Push::Push(SDL_Renderer* renderer) : Spell("Push")
+Push::Push(SDL_Renderer* renderer, bool drawUI) : Spell("Push")
 {
+    if(drawUI) spell_icon = SpellIcon("warrior", this, 1, renderer);
     id = uti::SpellID::PUSH;
-    cd = 1000;
+    cd = 7000;
     cancelable = false;
     moving = true;
     boostSpeed = 1;

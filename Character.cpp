@@ -58,6 +58,5 @@ void Character::draw(SDL_Renderer* renderer)
     //--- On dessine le bras devant ---//
     if (dir == 1) if (textArmR[animationID][dir]) SDL_RenderCopy(renderer, textArmR[animationID][dir], &showPos, &pos);
     
-    
-    for (auto it = spells.begin(); it != spells.end(); ++it) it->second->draw(renderer);
+    if(drawUI) for (auto it = spells.begin(); it != spells.end(); ++it) it->second->draw(renderer);
 }

@@ -9,7 +9,7 @@ using namespace std;
 class Whirlwind : public Spell
 {
 public:
-	Whirlwind(SDL_Renderer* renderer);
+	Whirlwind(SDL_Renderer* renderer, bool drawUI);
 	void run(Entity& e) override;
 	void runOthers (Entity& player) override;
 	void resetSpell(Entity& player) override;

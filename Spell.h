@@ -40,15 +40,16 @@ class Spell
 		bool isMoving() { return moving; }
 		bool isDmgDone() { return dmgDone; }
 		short getDmg() { return this->dmg; }
-		bool isAvailable() { return chrono::duration_cast<std::chrono::milliseconds>(chrono::high_resolution_clock::now() - last_time_used).count() >= cd; }
+		bool isAvailable() { return available; }
 		bool isCancelable() { return cancelable;  }
 		bool isAoe() { return aoe; }
+		void check_cd();
 
 		map<float, SDL_Surface*[30]>& getImg()  { return img;  }
 		map<float, SDL_Texture*[30]>& getText() { return text; }
 
 		void resetStep() { step = 0; }
-		void start_cd() { last_time_used = chrono::high_resolution_clock::now(); }
+		void start_cd() { last_time_used = chrono::high_resolution_clock::now(); available = false;  spell_icon.setCDIcon(true); }
 
 		void draw(SDL_Renderer* renderer);
 
@@ -56,7 +57,7 @@ class Spell
 		string name = "";
 		short range = 0, dmg = 0, step = 0, id = 0;
 		float boostSpeed = 1;
-		bool moving = false, cancelable = true, aoe = false;
+		bool moving = false, cancelable = true, aoe = false, available = false;
 
 		bool dmgDone = false;//faire une classe intermédiaire ? pour spell soutien / spell dmg ? -> problème si je veux un spell qui do both ? faire une troisième classe ?
 		short hitSpeed = 0;//coups par seconde

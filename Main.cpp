@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
     int rowMap = posy / 1080, colMap = posx / 1920;
     initialXOffset = width / 2 - 125 - ((int)posx % 1920);
     initialYOffset = height / 2 - 125 - ((int)posy % 1080);
-    c = new Warrior("Titus", posx, posy, ne.id, 1, renderer);
+    c = new Warrior("Titus", posx, posy, ne.id, 1, renderer, true);
     c->setHealth(ne.hp);
     c->setFaction(nef.faction);
     cout << "FACTION: " << c->getFaction() << endl;
@@ -239,7 +239,7 @@ int main(int argc, char* argv[])
                             c->setAAActive(false); //créer fct useSpell
                             c->setSpell(uti::SpellID::WHIRLWIND);  
                             co.sendNESTCP(c->getNES(uti::SpellID::WHIRLWIND)); 
-                            c->getSpell(uti::SpellID::WHIRLWIND)->start_cd(); 
+                            c->getSpell(uti::SpellID::WHIRLWIND)->start_cd();
                         } 
                     }
                     if (events.key.keysym.sym == SDLK_e) 
@@ -412,6 +412,8 @@ void t_move_player()
             c->getSpell(uti::SpellID::AA)->start_cd();
             co.sendNESETCP(c->getNESE(c->getSpellUsed()->getID(), c->getTarget()->getID()));
         }
+        //on check les cd des spells et on mets à jour l'affichage
+        for (auto it = c->getSpells()->begin(); it != c->getSpells()->end(); ++it) it->second->check_cd();
             
 		mtx.unlock();
         Sleep(1);

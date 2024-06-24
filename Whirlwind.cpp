@@ -1,9 +1,9 @@
 #include "Whirlwind.h"
 #include "Building.h"
 
-Whirlwind::Whirlwind(SDL_Renderer* renderer) : Spell("Whirlwind")
+Whirlwind::Whirlwind(SDL_Renderer* renderer, bool drawUI) : Spell("Whirlwind")
 {
-    spell_icon = SpellIcon("warrior", this, renderer);
+    if(drawUI) spell_icon = SpellIcon("warrior", this, 0, renderer);
     id = uti::SpellID::WHIRLWIND;
     cd = 5000;
     cancelable = false;

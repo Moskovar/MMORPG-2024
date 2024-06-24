@@ -2,9 +2,10 @@
 
 Font::Font(string text, int size, short r, short g, short b, short a, SDL_Renderer* renderer)
 {
+    this->renderer = renderer;
     this->text = text;
 
-    //// Chargement de la police
+    // Chargement de la police
     font = TTF_OpenFont("fonts/roboto/Roboto-Regular.ttf", size);
     if (font == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG] > %s", TTF_GetError());
@@ -31,6 +32,7 @@ Font::Font(string text, int size, short r, short g, short b, short a, SDL_Render
         TTF_CloseFont(font);
         TTF_Quit();
     }
+
     this->pos.w = img->w;
     this->pos.h = img->h;
 }

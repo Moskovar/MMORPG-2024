@@ -41,6 +41,7 @@ class Entity : public Element
 
 		Spell* getSpell(int i)			  { return spells[i];												  }
 		Spell* getSpellUsed() { return this->spellUsed; }
+		map<short, Spell*>* getSpells() { return &this->spells; }
 		Pseudo		 getPseudo()          { return this->pseudo;											  }
 		float		 getPseudoX()         { return this->x + 125 - this->pseudo.getWidth() / 2;			      }
 		float		 getPseudoY()         { return this->y + 15;											  }
@@ -138,8 +139,8 @@ class Entity : public Element
 		short id = 0, health = 0, animationSpeed = 15;
 
 		Pseudo pseudo;
-		SDL_Surface* imgPortrait  = nullptr;
-		SDL_Texture* textPortrait = nullptr;
+		SDL_Surface* imgPortrait   = nullptr;
+		SDL_Texture* textPortrait  = nullptr;
 
 		SDL_Surface* imgBar		   = nullptr;
 		SDL_Texture* textBar	   = nullptr;
@@ -157,7 +158,7 @@ class Entity : public Element
 		short category = 0, step = 0, xMovebox = 0, yMovebox = 0, faction = 0;//faction 0 1 2 neutral fac1 fac2
 		uti::Circle centerBox = { { 0, 0 }, 0 };
 		float dir = 0.0f, xRate = 0.0f, yRate = 0.0f, speed = 0.0f;
-		bool alive = true, moving = false/*, spellActive = false*/, aaActive = false, cancelAA = false;
+		bool alive = true, moving = false/*, spellActive = false*/, aaActive = false, cancelAA = false, drawUI = false;
 
 		short animationID = 0;
 		map <short, map<float, SDL_Surface*[30]>> img;

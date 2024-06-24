@@ -109,7 +109,6 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
 
 
 
-
     imgPortrait = IMG_Load(string("img/entity/" + imgSrc + "/picture/head.png").c_str());
     if (imgPortrait) textPortrait = SDL_CreateTextureFromSurface(renderer, imgPortrait);
     else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> portrait.png"); exit(0); }
@@ -163,14 +162,6 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
     spells[uti::SpellID::AA] = new AutoAttack(renderer);
     img[uti::SpellID::AA]    = spells[uti::SpellID::AA]->getImg();
     text[uti::SpellID::AA]   = spells[uti::SpellID::AA]->getText();
-
-    spells[uti::SpellID::WHIRLWIND] = new Whirlwind(renderer);
-    img[uti::SpellID::WHIRLWIND]    = spells[uti::SpellID::WHIRLWIND]->getImg();
-    text[uti::SpellID::WHIRLWIND]   = spells[uti::SpellID::WHIRLWIND]->getText();
-
-    spells[uti::SpellID::PUSH] = new Push(renderer);
-    img[uti::SpellID::PUSH] = spells[uti::SpellID::PUSH]->getImg();
-    text[uti::SpellID::PUSH] = spells[uti::SpellID::PUSH]->getText();
 
     updateBoxes();
 }
