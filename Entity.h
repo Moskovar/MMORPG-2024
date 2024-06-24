@@ -91,9 +91,9 @@ class Entity : public Element
 		void increaseX()					 { this->x++; this->pos.x = x;							   }
 		void increaseStep()					 { step++;												   }
 		void resetStep()					 { step = 0;											   }
-		void updateMovebox()				 { xMovebox = x + 125; yMovebox = y + 185;				   }
-		void updateClickBox()				 { clickBox.x = x + 90;  clickBox.y = y + 65;	   }
-		void updateCenterBox()				 { centerBox.center.x = x + 125; centerBox.center.y = y + 140;     }
+		void updateMovebox()				 { xMovebox = x + 135; yMovebox = y + 235;				   }
+		void updateClickBox()				 { clickBox.x = x + 100;  clickBox.y = y + 90;	   }
+		void updateCenterBox()				 { centerBox.center.x = x + 140; centerBox.center.y = y + 180;     }
 		void updateBoxes()					 { updateMovebox(); updateClickBox(); updateRBars(); updateCenterBox(); }
 		void addX(float x)				     { this->x += x; this->pos.x = this->x;					   }
 		void addY(float y)				     { this->y += y; this->pos.y = this->y;					   }
@@ -103,7 +103,7 @@ class Entity : public Element
 		void setAlive(bool alive)			 { this->alive = alive;									   }
 		void setMoving(bool state)			 { this->moving = state;								   }
 		void update();																				   
-		void setAAActive(bool state)        { this->aaActive = state; spells[uti::SpellID::AA]->resetStep(); }
+		void setAAActive(bool state)         { this->aaActive = state; spells[uti::SpellID::AA]->resetStep(); }
 		void setCancelAA(bool state)		 { this->cancelAA = state;								   }
 		void setAnimationID(int animationID) { this->animationID = animationID;						   }
 		//void setSpellActive(bool state)      { this->spellActive = state;							   }
@@ -118,6 +118,7 @@ class Entity : public Element
 		void setTarget(Entity* target) { this->target = target; }
 		void resetTarget() { this->target = nullptr; }
 		void setStaticSpellTarget(uti::Point p) { this->staticSpellTarget = p; }
+		void setDir(float dir) { this->dir = dir; }
 
 		void setPos(float x, float y);
 
@@ -161,6 +162,21 @@ class Entity : public Element
 		short animationID = 0;
 		map <short, map<float, SDL_Surface*[30]>> img;
 		map <short, map<float, SDL_Texture*[30]>> text;
+
+		map <short, map<float, SDL_Surface*>> imgHair;
+		map <short, map<float, SDL_Texture*>> textHair;
+
+		map <short, map<float, SDL_Surface*>> imgHead;
+		map <short, map<float, SDL_Texture*>> textHead;
+
+		map <short, map<float, SDL_Surface*>> imgBody;
+		map <short, map<float, SDL_Texture*>> textBody;
+
+		map <short, map<float, SDL_Surface*>> imgArmL;
+		map <short, map<float, SDL_Texture*>> textArmL;
+
+		map <short, map<float, SDL_Surface*>> imgArmR;
+		map <short, map<float, SDL_Texture*>> textArmR;
 
 		SDL_Rect clickBox{ 0, 0, 0, 0 };
 

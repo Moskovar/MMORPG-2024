@@ -14,7 +14,9 @@ Element::Element(float xMap, float yMap, int width, int height)
 	this->x = (int)xMap % 1900;
 	this->y = (int)yMap % 1080;
 
-	this->pos.x = x;	this->pos.y = y;	this->pos.w = width;	this->pos.h = height;
+	this->pos.x     = x;	 this->pos.y	 = y;	
+	this->pos.w		= width; this->pos.h     = height;
+	this->showPos.w = width; this->showPos.h = height;
 }
 
 void Element::resetPos()

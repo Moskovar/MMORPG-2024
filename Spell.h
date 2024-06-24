@@ -55,7 +55,7 @@ class Spell
 	protected:
 		string name = "";
 		short range = 0, dmg = 0, step = 0, id = 0;
-		float boostSpeed = 0;
+		float boostSpeed = 1;
 		bool moving = false, cancelable = true, aoe = false;
 
 		bool dmgDone = false;//faire une classe intermédiaire ? pour spell soutien / spell dmg ? -> problème si je veux un spell qui do both ? faire une troisième classe ?

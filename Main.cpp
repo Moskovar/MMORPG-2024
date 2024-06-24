@@ -329,12 +329,11 @@ int main(int argc, char* argv[])
                 draw_circle(renderer, it->second->getXMovebox() + 5 * it->second->getSpeed() * it->second->getXRate() * it->second->getDeltaTime(), it->second->getYMovebox() + 5 * it->second->getSpeed() * it->second->getYRate() * it->second->getDeltaTime(), 10);
                 draw_circle(renderer, it->second->getXCenterBox(), it->second->getYCenterBox(), 25);
             }
-            draw_circle(renderer, c->getXMovebox() + 5 * c->getSpeed() * c->getXRate() * c->getDeltaTime(), c->getYMovebox() + 5 * c->getSpeed() * c->getYRate() * c->getDeltaTime(), 10);
-            draw_circle(renderer, c->getXCenterBox(), c->getYCenterBox(), c->getCenterBoxRadius());
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        //SDL_RenderDrawRect(renderer, npc.getPClickBox());
         SDL_RenderDrawRect(renderer, c->getPClickBox());
+        SDL_Rect pt{ (int)c->getX(), (int)c->getY(), 250, 250 };
+        SDL_RenderDrawRect(renderer, &pt);
 
         //--- DRAW UI ---//
         ui->draw(renderer);
@@ -405,7 +404,7 @@ void t_move_player()
             if(c->getSpellUsed()) co.sendNESETCP(c->getNESE(c->getSpellUsed()->getID(), spellEffects[spellEffects.size() - 1].entityID));
         }
 
-        //on check si AA active, si CD OK et si distance OK + si good direction
+        //on check si AA active, si CD OK et si distance OK + si good direction = on envoie une AA
         if (c->isAAActive() && c->getSpell(uti::SpellID::AA)->isAvailable() && c->getSpell(uti::SpellID::AA)->isInRange(c->getCenterBox(), c->getTarget()->getCenterBox()) && c->isInGoodDirection())
         {
             c->setSpell(uti::SpellID::AA);
@@ -440,7 +439,13 @@ void t_move_players()
 
                 e_cast->update();
                 e_cast->updateBoxes();
-                if (e_cast->getXRate() == 0 && e_cast->getYRate() == 0 && !e_cast->getSpellUsed()) { e_cast->resetStep(); continue; }
+                if (e_cast->getXRate() == 0 && e_cast->getYRate() == 0 && !e_cast->getSpellUsed()) //{ e_cast->resetStep(); continue; }
+                {
+                    if (e_cast->getStep() < 23) e_cast->increaseStep();
+                    else                        e_cast->resetStep();
+
+                    continue;
+                }
 
                 bool collision = false;
 

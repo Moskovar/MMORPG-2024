@@ -30,6 +30,7 @@ AutoAttack::AutoAttack(SDL_Renderer* renderer) : Spell("Auto attack")
 
 void AutoAttack::run(Entity& player)
 {
+    player.setDir(1);
     if (step == 0)
     {
         player.setAnimationID(id);
@@ -38,9 +39,8 @@ void AutoAttack::run(Entity& player)
 
     step++;
     player.setStep(step);
-    //cout << player.getAnimationID() << " : " << player.getStep() << " : " << player.getDir() << endl;
 
-    if (step == 16 * player.getAnimationSpeed())
+    if (step == 24 * player.getAnimationSpeed())
     {
         step = 0;
         player.setStep(0);

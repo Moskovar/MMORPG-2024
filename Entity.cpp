@@ -29,7 +29,86 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
     posBarH.h  = 10;
     posHealth.h = 10;
 
-    centerBox.radius = 25;
+    centerBox.radius = 30;
+
+    imgBody[0][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/idle/spritesheet.png").c_str());
+    if (imgBody[0][3]) textBody[0][3] = SDL_CreateTextureFromSurface(renderer, imgBody[0][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle left body.png"); exit(0); }
+
+
+
+    //--- Right ---//
+
+    //--- idle ---//
+    imgHair[0][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/idle/hair.png").c_str());
+    if (imgHair[0][1]) textHair[0][1] = SDL_CreateTextureFromSurface(renderer, imgHair[0][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle right hair.png"); exit(0); }
+
+    imgHead[0][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/idle/head.png").c_str());
+    if (imgHead[0][1]) textHead[0][1] = SDL_CreateTextureFromSurface(renderer, imgHead[0][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle right head.png"); exit(0); }
+
+    imgBody[0][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/idle/body.png").c_str());
+    if (imgBody[0][1]) textBody[0][1] = SDL_CreateTextureFromSurface(renderer, imgBody[0][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle right body.png"); exit(0); }
+
+    imgArmL[0][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/idle/arml.png").c_str());
+    if (imgArmL[0][1]) textArmL[0][1] = SDL_CreateTextureFromSurface(renderer, imgArmL[0][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle right arml.png"); exit(0); }
+
+    imgArmR[0][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/idle/armr.png").c_str());
+    if (imgArmR[0][1]) textArmR[0][1] = SDL_CreateTextureFromSurface(renderer, imgArmR[0][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle right armr.png"); exit(0); }
+
+    //--- run ---//
+
+    imgHair[1][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/run/hair.png").c_str());
+    if (imgHair[1][1]) textHair[1][1] = SDL_CreateTextureFromSurface(renderer, imgHair[1][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run right hair.png"); exit(0); }
+
+    imgHead[1][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/run/head.png").c_str());
+    if (imgHead[1][1]) textHead[1][1] = SDL_CreateTextureFromSurface(renderer, imgHead[1][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run right head.png"); exit(0); }
+
+    imgBody[1][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/run/body.png").c_str());
+    if (imgBody[1][1]) textBody[1][1] = SDL_CreateTextureFromSurface(renderer, imgBody[1][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run right body.png"); exit(0); }
+
+    imgArmL[1][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/run/arml.png").c_str());
+    if (imgArmL[1][1]) textArmL[1][1] = SDL_CreateTextureFromSurface(renderer, imgArmL[1][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run right arml.png"); exit(0); }
+
+    imgArmR[1][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/run/armr.png").c_str());
+    if (imgArmR[1][1]) textArmR[1][1] = SDL_CreateTextureFromSurface(renderer, imgArmR[1][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run right armr.png"); exit(0); }
+
+
+    //--- auto attack ---//
+
+    imgHair[3][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/aa/hair.png").c_str());
+    if (imgHair[3][1]) textHair[3][1] = SDL_CreateTextureFromSurface(renderer, imgHair[3][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa right hair.png"); exit(0); }
+
+    imgHead[3][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/aa/head.png").c_str());
+    if (imgHead[3][1]) textHead[3][1] = SDL_CreateTextureFromSurface(renderer, imgHead[3][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa right head.png"); exit(0); }
+
+    imgBody[3][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/aa/body.png").c_str());
+    if (imgBody[3][1]) textBody[3][1] = SDL_CreateTextureFromSurface(renderer, imgBody[3][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa right body.png"); exit(0); }
+
+    imgArmL[3][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/aa/arml.png").c_str());
+    if (imgArmL[3][1]) textArmL[3][1] = SDL_CreateTextureFromSurface(renderer, imgArmL[3][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa right arml.png"); exit(0); }
+
+    imgArmR[3][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/aa/armr.png").c_str());
+    if (imgArmR[3][1]) textArmR[3][1] = SDL_CreateTextureFromSurface(renderer, imgArmR[3][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa right armr.png"); exit(0); }
+
+
+
+
+
 
     imgPortrait = IMG_Load(string("img/entity/" + imgSrc + "/picture/head.png").c_str());
     if (imgPortrait) textPortrait = SDL_CreateTextureFromSurface(renderer, imgPortrait);
@@ -115,7 +194,14 @@ Entity::~Entity()
 
 void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_solid, Map& m, bool& cameraLock, float& deltaTime, bool& sendSpellData, vector<SpellEffect>& spellEffects, chrono::high_resolution_clock::time_point now)
 {
-    if (!moving && !spellUsed) return;
+    //--- idle animation ---//
+    if (!moving && !spellUsed) 
+    { 
+
+        if (step < 23 * animationSpeed)  step++;
+        else                             step = 0;
+        return; 
+    }
 
     xChange = speed * xRate * deltaTime,
     yChange = speed * yRate * deltaTime;
@@ -345,22 +431,22 @@ void Entity::update()
     
     switch (countDir)
     {
-        case 0 : xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; step = 0; break;
-        case 1 : xRate =    0; yRate =   -1; dir =   0; if(spellUsed) break; moving = true;            break;
-        case 3 : xRate =    1; yRate =    0; dir =   1; if(spellUsed) break; moving = true;            break;
-        case 6 : xRate =    0; yRate =    1; dir =   2; if(spellUsed) break; moving = true;            break;
-        case 11: xRate =   -1; yRate =    0; dir =   3; if(spellUsed) break; moving = true;            break;
-        case 4 : xRate =  0.5; yRate = -0.5; dir = 0.5; if(spellUsed) break; moving = true;            break;
-        case 7 : xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; step = 0; break;
-        case 12: xRate = -0.5; yRate = -0.5; dir = 3.5; if(spellUsed) break; moving = true;            break;
-        case 9 : xRate =  0.5; yRate =  0.5; dir = 1.5; if(spellUsed) break; moving = true;            break;
-        case 14: xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; step = 0; break;
-        case 17: xRate = -0.5; yRate =  0.5; dir = 2.5; if(spellUsed) break; moving = true;            break;
-        case 10: xRate =    1; yRate =    0; dir =   1; if(spellUsed) break; moving = true;            break;
-        case 15: xRate =    0; yRate =   -1; dir =   0; if(spellUsed) break; moving = true;            break;
-        case 18: xRate =   -1; yRate =    0; dir =   3; if(spellUsed) break; moving = true;            break;
-        case 20: xRate =    0; yRate =    1; dir =   2; if(spellUsed) break; moving = true;            break;
-        case 21: xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; step = 0; break;
+        case 0 : xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; /*step = 0;*/ break;
+        case 1 : xRate =    0; yRate =   -1; dir =   0; if(spellUsed) break; moving = true;                break;
+        case 3 : xRate =    1; yRate =    0; dir =   1; if(spellUsed) break; moving = true;                break;
+        case 6 : xRate =    0; yRate =    1; dir =   2; if(spellUsed) break; moving = true;                break;
+        case 11: xRate =   -1; yRate =    0; dir =   3; if(spellUsed) break; moving = true;                break;
+        case 4 : xRate =  0.5; yRate = -0.5; dir = 0.5; if(spellUsed) break; moving = true;                break;
+        case 7 : xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; /*step = 0;*/ break;
+        case 12: xRate = -0.5; yRate = -0.5; dir = 3.5; if(spellUsed) break; moving = true;                break;
+        case 9 : xRate =  0.5; yRate =  0.5; dir = 1.5; if(spellUsed) break; moving = true;                break;
+        case 14: xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; /*step = 0;*/ break;
+        case 17: xRate = -0.5; yRate =  0.5; dir = 2.5; if(spellUsed) break; moving = true;                break;
+        case 10: xRate =    1; yRate =    0; dir =   1; if(spellUsed) break; moving = true;                break;
+        case 15: xRate =    0; yRate =   -1; dir =   0; if(spellUsed) break; moving = true;                break;
+        case 18: xRate =   -1; yRate =    0; dir =   3; if(spellUsed) break; moving = true;                break;
+        case 20: xRate =    0; yRate =    1; dir =   2; if(spellUsed) break; moving = true;                break;
+        case 21: xRate =    0; yRate =    0;            if(spellUsed) break; moving = false; /*step = 0;*/ break;
         //default:
     }
 
