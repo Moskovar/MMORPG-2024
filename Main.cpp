@@ -33,7 +33,6 @@ mutex mtx;
 SDL_Window* window{ nullptr };
 SDL_Renderer* renderer{ nullptr };
 
-
 SDL_bool run = SDL_TRUE;
 Uint32 flags;
 float deltaTime = 0;
@@ -69,7 +68,6 @@ void applyDamages(short dmg);
 
 int main(int argc, char* argv[])
 {
-
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[DEBUG] > %s", SDL_GetError());
@@ -146,16 +144,16 @@ int main(int argc, char* argv[])
 
     //--- Construction de la map ---//
     MapFragment* mf1 = new MapFragment("enchantedforest", renderer, {});
-    m.addFragment(0, 0, mf1);                    {}
+    m.addFragment(0, 0, mf1);
     MapFragment* mf2 = new MapFragment("enchantedforest", renderer, {});
-    m.addFragment(0, 1, mf2);                    {}
+    m.addFragment(0, 1, mf2);
     MapFragment* mf3 = new MapFragment("enchantedforest", renderer, {});
-    m.addFragment(0, 2, mf3);                    {}
+    m.addFragment(0, 2, mf3);
     MapFragment* mf4 = new MapFragment("enchantedforest", renderer, {});
-    m.addFragment(0, 3, mf4);                    {}
-                                                 {}
+    m.addFragment(0, 3, mf4);
+                                                
     MapFragment* mf5 = new MapFragment("enchantedforest", renderer, {});
-    m.addFragment(1, 0, mf5);                    {}
+    m.addFragment(1, 0, mf5);
     MapFragment* mf6 = new MapFragment("enchantedforest", renderer, {});
     m.addFragment(1, 3, mf6);
 
@@ -245,7 +243,7 @@ int main(int argc, char* argv[])
                     if (events.key.keysym.sym == SDLK_e) 
                     { 
                         if ((!c->getSpellUsed() || (c->getSpellUsed() && c->getSpellUsed()->isCancelable())) && c->getSpell(uti::SpellID::PUSH)->isAvailable() 
-                           && c->getTarget() && c->getTarget()->getFaction() != c->getFaction() && c->getSpell(uti::SpellID::PUSH)->isInRange(c->getCenterBox(), c->getTarget()->getCenterBox()) && c->isInGoodDirection())//Si pas de spell actif ou un spell interruptible et le spell est dispo
+                           && c->getTarget()    &&  c->getTarget()->getFaction() != c->getFaction() && c->getSpell(uti::SpellID::PUSH)->isInRange(c->getCenterBox(), c->getTarget()->getCenterBox()) && c->isInGoodDirection())//Si pas de spell actif ou un spell interruptible et le spell est dispo
                         {
                             c->setAAActive(false);
                             c->setSpell(uti::SpellID::PUSH);
@@ -253,13 +251,16 @@ int main(int argc, char* argv[])
                             c->getSpell(uti::SpellID::PUSH)->start_cd();
                         }
                     }
-                    if (events.key.keysym.sym == SDLK_y) {  }
+                    if (events.key.keysym.sym == SDLK_r) { c->setSpell(uti::SpellID::BLOODFURY); }
+
+                    if (events.key.keysym.sym == SDLK_F1) { c->setDir(0.5); }
+                    if (events.key.keysym.sym == SDLK_F2) { c->setDir(1.5); }
+                    if (events.key.keysym.sym == SDLK_F3) { c->setDir(2.5); }
+                    if (events.key.keysym.sym == SDLK_F4) { c->setDir(3.5); }
 
                     //--- Caméra ---//
-                    if (events.key.keysym.sym == SDLK_SPACE) { cameraLock = true;        resetAllElementsPos(); c->updateMovebox(); }
-                    if (events.key.keysym.sym == SDLK_y)     { cameraLock = !cameraLock; resetAllElementsPos(); c->updateMovebox(); }
-                    if (events.key.keysym.sym == SDLK_r) applyDamages(5);
-                    if (events.key.keysym.sym == SDLK_t) applyDamages(-5);
+                    if (events.key.keysym.sym == SDLK_SPACE) { cameraLock = true;        resetAllElementsPos(); c->updateBoxes(); }
+                    if (events.key.keysym.sym == SDLK_y)     { cameraLock = !cameraLock; resetAllElementsPos(); c->updateBoxes(); }
                     break;
                 case SDL_KEYUP: // Un événement de type touche relâchée est effectué
                     //--- Quitter le jeu ---//
@@ -476,7 +477,7 @@ void t_move_players()
 
                 if (!e_cast->getSpellUsed())
                 {
-                    if (dir == 0)
+                    /*if (dir == 0)
                         if (step < 9 * e_cast->getAnimationSpeed())  e_cast->increaseStep();
                         else                                         e_cast->resetStep();
                     else if (dir == 1)
@@ -499,7 +500,10 @@ void t_move_players()
                         else                                         e_cast->resetStep();
                     else if (dir == 3.5)
                         if (step < 11 * e_cast->getAnimationSpeed()) e_cast->increaseStep();
-                        else                                         e_cast->resetStep();
+                        else                                         e_cast->resetStep();*/
+
+                    if (step < 23 * uti::animationSpeeds[uti::SpellID::RUN]) e_cast->increaseStep();
+                    else                                                     e_cast->resetStep();
                 }
                 else
                 {
@@ -611,7 +615,9 @@ void t_receive_data_TCP()
         //Si on reçoit le changement de target d'un joueur
         if (net.header != -1 && entities[net.id])
         {
+            mtx.lock();
             entities[net.id]->setTarget(entities[net.targetID]);
+            mtx.unlock();
         }
 
         //Si on reçoit la mise à jour de faction d'un joueur

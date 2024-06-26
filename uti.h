@@ -11,7 +11,6 @@ using namespace std;
 
 namespace uti {
 
-
 	enum Language {
 		FR,
 		ENG
@@ -37,10 +36,14 @@ namespace uti {
 		NET = 4
 	};
 
-	enum SpellID {
+	enum SpellID {//et animationID
+		IDLE      = 0,
+		RUN       = 1,
+		WALK      = 2,
 		AA		  = 3,
 		WHIRLWIND = 4,
-		PUSH      = 5
+		PUSH      = 5,
+		BLOODFURY = 6
 	};
 
 	struct MoveRate {//utile ??
@@ -88,6 +91,9 @@ namespace uti {
 	
 	extern map<int, map<int, string>> categories;
 	extern map<float, MoveRate> pixDir;
+	extern map<short, short> animationSpeeds;
+
+	//Warrior* titus;
 
 	// Structure pour représenter un point
 	struct Point {

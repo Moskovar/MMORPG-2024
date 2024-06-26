@@ -52,8 +52,11 @@ void Map::addFragment(int r, int c, string src, vector<Element*> v_elements, SDL
 
 void Map::addOffset(int r, int c, float xOffset, float yOffset)
 {
-	fragments[r][c]->addXOffset(xOffset);
-	fragments[r][c]->addYOffset(yOffset);
+	if (fragments[r][c])
+	{
+		fragments[r][c]->addXOffset(xOffset);
+		fragments[r][c]->addYOffset(yOffset);
+	}
 }
 
 void Map::addOffset(float xOffset, float yOffset)

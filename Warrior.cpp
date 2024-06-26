@@ -12,5 +12,9 @@ Warrior::Warrior(std::string name, float xMap, float yMap, int id, int category,
     img[uti::SpellID::PUSH] = spells[uti::SpellID::PUSH]->getImg();
     text[uti::SpellID::PUSH] = spells[uti::SpellID::PUSH]->getText();
 
+    spells[uti::SpellID::BLOODFURY] = new BloodFury(renderer, drawUI);
+    img[uti::SpellID::BLOODFURY] = spells[uti::SpellID::BLOODFURY]->getImg();//useless ????? img change pas
+    text[uti::SpellID::BLOODFURY] = spells[uti::SpellID::BLOODFURY]->getText();//useless ?????
+
 	updateBoxes();
 }

@@ -28,6 +28,18 @@ namespace uti {
     {1.5,   {0.5,  0.5}},
     {2.5,  {-0.5, 0.5}},
     };
+
+    map<short, short> animationSpeeds =
+    {
+        {SpellID::IDLE     , 50},
+        {SpellID::RUN      , 15},
+        {SpellID::WALK     , 30},
+        {SpellID::AA       , 15},
+        {SpellID::WHIRLWIND, 15},
+        {SpellID::PUSH     , 15},
+        {SpellID::BLOODFURY, 15}
+    };
+
     uint64_t getCurrentTimestamp()
     {
         return static_cast<uint64_t>(std::time(nullptr));

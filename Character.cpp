@@ -29,7 +29,20 @@ void Character::draw(SDL_Renderer* renderer)
     updateRBars();
     SDL_RenderCopy(renderer, textHealth, NULL, &posHealth);
     SDL_RenderCopy(renderer, textBar, NULL, &posBarH);
-	if(animationID == 3 || animationID == 4) if(text[animationID][dir][step / animationSpeed]) SDL_RenderCopy(renderer, text[animationID][dir][step / animationSpeed], NULL, &this->pos);
+	//if(animationID == 3 || animationID == 4) if(text[animationID][dir][step / animationSpeed]) SDL_RenderCopy(renderer, text[animationID][dir][step / animationSpeed], NULL, &this->pos);
+
+    short animationSpeed = 0;
+    if (!spellUsed)
+    {
+        if     (xRate == 0 && yRate == 0) animationSpeed = uti::animationSpeeds[uti::SpellID::IDLE];
+        else if(aaActive)                 animationSpeed = uti::animationSpeeds[uti::SpellID::AA];
+        else if(xRate != 0 || yRate != 0) animationSpeed = uti::animationSpeeds[uti::SpellID::RUN];
+    }
+    else
+    {
+        if (aaActive) animationSpeed = uti::animationSpeeds[uti::SpellID::AA];
+        else          animationSpeed = uti::animationSpeeds[spellUsed->getID()];
+    }
 
     showPos.x = 500 * ((step / animationSpeed) % 4);
     showPos.y = 500 * ((step / animationSpeed) / 4);
@@ -39,24 +52,28 @@ void Character::draw(SDL_Renderer* renderer)
     //cout << step / animationSpeed / 4 << " : " << srcRect.x << " : " << srcRect.y << std::endl;
 
     //--- On dessine le bras derrière ---//
-    if (dir == 1) if (textArmL[animationID][dir]) SDL_RenderCopy(renderer, textArmL[animationID][dir], &showPos, &pos);
+    //if      (dir == 0.5 || dir == 1) { if (textArmL[animationID][dir]) SDL_RenderCopy(renderer, textArmL[animationID][dir], &showPos, &pos); }
+    //else if (dir == 1.5 || dir == 3) { if (textArmR[animationID][dir]) SDL_RenderCopy(renderer, textArmR[animationID][dir], &showPos, &pos); }
 
-    if (animationID == 3 && moving)
-    {
-        if (textBody[animationID][dir]) SDL_RenderCopy(renderer, textBody[1][dir], &showPos, &pos);
-        if (textHead[animationID][dir]) SDL_RenderCopy(renderer, textHead[1][dir], &showPos, &pos);
-    }
-    else
-    {
-        if (textBody[animationID][dir]) SDL_RenderCopy(renderer, textBody[animationID][dir], &showPos, &pos);
-        if (textHead[animationID][dir]) SDL_RenderCopy(renderer, textHead[animationID][dir], &showPos, &pos);
-    }
+    //if (animationID == uti::AA && moving)//si attack
+    //{
+    //    if (textBody[animationID][dir]) SDL_RenderCopy(renderer, textBody[1][dir], &showPos, &pos);
+    //    if (textHead[animationID][dir]) SDL_RenderCopy(renderer, textHead[1][dir], &showPos, &pos);
+    //}
+    //else
+    //{
+    //    if (textBody[animationID][dir]) SDL_RenderCopy(renderer, textBody[animationID][dir], &showPos, &pos);
+    //    if (textHead[animationID][dir]) SDL_RenderCopy(renderer, textHead[animationID][dir], &showPos, &pos);
+    //}
 
-    if (animationID == 3 && moving) { if (textHair[animationID][dir]) SDL_RenderCopy(renderer, textHair[1][dir], &showPos, &pos); }
-    else                              if (textHair[animationID][dir]) SDL_RenderCopy(renderer, textHair[animationID][dir], &showPos, &pos);
+    //if (animationID == 3 && moving) { if (textHair[animationID][dir]) SDL_RenderCopy(renderer, textHair[1][dir], &showPos, &pos); }
+    //else                              if (textHair[animationID][dir]) SDL_RenderCopy(renderer, textHair[animationID][dir], &showPos, &pos);
 
-    //--- On dessine le bras devant ---//
-    if (dir == 1) if (textArmR[animationID][dir]) SDL_RenderCopy(renderer, textArmR[animationID][dir], &showPos, &pos);
+    ////--- On dessine le bras devant ---//
+    //if      (dir == 0.5 || dir == 1) { if (textArmR[animationID][dir]) SDL_RenderCopy(renderer, textArmR[animationID][dir], &showPos, &pos); }
+    //else if (dir == 1.5 || dir == 3) { if (textArmL[animationID][dir]) SDL_RenderCopy(renderer, textArmL[animationID][dir], &showPos, &pos); }
+
+    if (textFull[animationID][dir]) SDL_RenderCopy(renderer, textFull[animationID][dir], &showPos, &pos);
     
     if(drawUI) for (auto it = spells.begin(); it != spells.end(); ++it) it->second->draw(renderer);
 }

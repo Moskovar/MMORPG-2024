@@ -31,10 +31,107 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
 
     centerBox.radius = 30;
 
-    imgBody[0][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/idle/spritesheet.png").c_str());
-    if (imgBody[0][3]) textBody[0][3] = SDL_CreateTextureFromSurface(renderer, imgBody[0][3]);
-    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle left body.png"); exit(0); }
+    auto start = std::chrono::high_resolution_clock::now();
 
+    //--- back-right ---//
+    
+    //--- idle ---//
+    imgHair[0][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/idle/hair.png").c_str());
+    if (imgHair[0][0.5]) textHair[0][0.5] = SDL_CreateTextureFromSurface(renderer, imgHair[0][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle back-right hair.png"); exit(0); }
+
+    //imgHead[0][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/idle/head.png").c_str());
+    //if (imgHead[0][0.5]) textHead[0][0.5] = SDL_CreateTextureFromSurface(renderer, imgHead[0][0.5]);
+    //else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle back-right head.png"); exit(0); }
+
+    imgBody[0][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/idle/body.png").c_str());
+    if (imgBody[0][0.5]) textBody[0][0.5] = SDL_CreateTextureFromSurface(renderer, imgBody[0][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle back-right body.png"); exit(0); }
+
+    imgArmL[0][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/idle/arml.png").c_str());
+    if (imgArmL[0][0.5]) textArmL[0][0.5] = SDL_CreateTextureFromSurface(renderer, imgArmL[0][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle back-right arml.png"); exit(0); }
+
+    imgArmR[0][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/idle/armr.png").c_str());
+    if (imgArmR[0][0.5]) textArmR[0][0.5] = SDL_CreateTextureFromSurface(renderer, imgArmR[0][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle back-right armr.png"); exit(0); }
+
+    imgFull[0][0.5] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[0][0.5]->w, imgBody[0][0.5]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmL[0][0.5], NULL, imgFull[0][0.5], NULL);
+    SDL_BlitSurface(imgBody[0][0.5], NULL, imgFull[0][0.5], NULL);
+    SDL_BlitSurface(imgArmR[0][0.5], NULL, imgFull[0][0.5], NULL);
+    //SDL_BlitSurface(imgHead[0][0.5], NULL, imgFull[0][0.5], NULL);
+    SDL_BlitSurface(imgHair[0][0.5], NULL, imgFull[0][0.5], NULL);
+
+    if (imgFull[0][0.5]) textFull[0][0.5] = SDL_CreateTextureFromSurface(renderer, imgFull[0][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle back-right full"); exit(0); }
+
+    //--- run ---//
+
+    imgHair[1][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/run/hair.png").c_str());
+    if (imgHair[1][0.5]) textHair[1][0.5] = SDL_CreateTextureFromSurface(renderer, imgHair[1][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run back-right hair.png"); exit(0); }
+
+    //imgHead[1][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/run/head.png").c_str());
+    //if (imgHead[1][0.5]) textHead[1][0.5] = SDL_CreateTextureFromSurface(renderer, imgHead[1][0.5]);
+    //else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run back-right head.png"); exit(0); }
+
+    imgBody[1][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/run/body.png").c_str());
+    if (imgBody[1][0.5]) textBody[1][0.5] = SDL_CreateTextureFromSurface(renderer, imgBody[1][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run back-right body.png"); exit(0); }
+
+    imgArmL[1][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/run/arml.png").c_str());
+    if (imgArmL[1][0.5]) textArmL[1][0.5] = SDL_CreateTextureFromSurface(renderer, imgArmL[1][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run back-right arml.png"); exit(0); }
+
+    imgArmR[1][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/run/armr.png").c_str());
+    if (imgArmR[1][0.5]) textArmR[1][0.5] = SDL_CreateTextureFromSurface(renderer, imgArmR[1][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run back-right armr.png"); exit(0); }
+
+    imgFull[1][0.5] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[1][0.5]->w, imgBody[1][0.5]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmL[1][0.5], NULL, imgFull[1][0.5], NULL);
+    SDL_BlitSurface(imgBody[1][0.5], NULL, imgFull[1][0.5], NULL);
+    SDL_BlitSurface(imgArmR[1][0.5], NULL, imgFull[1][0.5], NULL);
+    //SDL_BlitSurface(imgHead[1][0.5], NULL, imgFull[1][0.5], NULL);
+    SDL_BlitSurface(imgHair[1][0.5], NULL, imgFull[1][0.5], NULL);
+
+    if (imgFull[1][0.5]) textFull[1][0.5] = SDL_CreateTextureFromSurface(renderer, imgFull[1][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle back-right full"); exit(0); }
+
+    //--- auto attack ---//
+
+    imgHair[3][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/aa/hair.png").c_str());
+    if (imgHair[3][0.5]) textHair[3][0.5] = SDL_CreateTextureFromSurface(renderer, imgHair[3][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa back-right hair.png"); exit(0); }
+
+    //imgHead[3][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/aa/head.png").c_str());
+    //if (imgHead[3][0.5]) textHead[3][0.5] = SDL_CreateTextureFromSurface(renderer, imgHead[3][0.5]);
+    //else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa back-right head.png"); exit(0); }
+
+    imgBody[3][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/aa/body.png").c_str());
+    if (imgBody[3][0.5]) textBody[3][0.5] = SDL_CreateTextureFromSurface(renderer, imgBody[3][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa back-right body.png"); exit(0); }
+
+    imgArmL[3][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/aa/arml.png").c_str());
+    if (imgArmL[3][0.5]) textArmL[3][0.5] = SDL_CreateTextureFromSurface(renderer, imgArmL[3][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa back-right arml.png"); exit(0); }
+
+    imgArmR[3][0.5] = IMG_Load(string("img/entity/" + imgSrc + "/back-right/aa/armr.png").c_str());
+    if (imgArmR[3][0.5]) textArmR[3][0.5] = SDL_CreateTextureFromSurface(renderer, imgArmR[3][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa back-right armr.png"); exit(0); }
+
+    imgFull[3][0.5] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[3][0.5]->w, imgBody[3][0.5]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmL[3][0.5], NULL, imgFull[3][0.5], NULL);
+    SDL_BlitSurface(imgBody[3][0.5], NULL, imgFull[3][0.5], NULL);
+    SDL_BlitSurface(imgArmR[3][0.5], NULL, imgFull[3][0.5], NULL);
+    //SDL_BlitSurface(imgHead[3][0.5], NULL, imgFull[3][0.5], NULL);
+    SDL_BlitSurface(imgHair[3][0.5], NULL, imgFull[3][0.5], NULL);
+
+    if (imgFull[3][0.5]) textFull[3][0.5] = SDL_CreateTextureFromSurface(renderer, imgFull[3][0.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle back-right full"); exit(0); }
 
 
     //--- Right ---//
@@ -60,6 +157,17 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
     if (imgArmR[0][1]) textArmR[0][1] = SDL_CreateTextureFromSurface(renderer, imgArmR[0][1]);
     else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle right armr.png"); exit(0); }
 
+    imgFull[0][1] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[0][1]->w, imgBody[0][1]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmL[0][1], NULL, imgFull[0][1], NULL);
+    SDL_BlitSurface(imgBody[0][1], NULL, imgFull[0][1], NULL);
+    SDL_BlitSurface(imgArmR[0][1], NULL, imgFull[0][1], NULL);
+    SDL_BlitSurface(imgHead[0][1], NULL, imgFull[0][1], NULL);
+    SDL_BlitSurface(imgHair[0][1], NULL, imgFull[0][1], NULL);
+
+    if (imgFull[0][1]) textFull[0][1] = SDL_CreateTextureFromSurface(renderer, imgFull[0][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle right full"); exit(0); }
+
     //--- run ---//
 
     imgHair[1][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/run/hair.png").c_str());
@@ -81,6 +189,17 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
     imgArmR[1][1] = IMG_Load(string("img/entity/" + imgSrc + "/right/run/armr.png").c_str());
     if (imgArmR[1][1]) textArmR[1][1] = SDL_CreateTextureFromSurface(renderer, imgArmR[1][1]);
     else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run right armr.png"); exit(0); }
+
+    imgFull[1][1] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[1][1]->w, imgBody[1][1]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmL[1][1], NULL, imgFull[1][1], NULL);
+    SDL_BlitSurface(imgBody[1][1], NULL, imgFull[1][1], NULL);
+    SDL_BlitSurface(imgArmR[1][1], NULL, imgFull[1][1], NULL);
+    SDL_BlitSurface(imgHead[1][1], NULL, imgFull[1][1], NULL);
+    SDL_BlitSurface(imgHair[1][1], NULL, imgFull[1][1], NULL);
+
+    if (imgFull[1][1]) textFull[1][1] = SDL_CreateTextureFromSurface(renderer, imgFull[1][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle right full"); exit(0); }
 
 
     //--- auto attack ---//
@@ -105,6 +224,348 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
     if (imgArmR[3][1]) textArmR[3][1] = SDL_CreateTextureFromSurface(renderer, imgArmR[3][1]);
     else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa right armr.png"); exit(0); }
 
+    imgFull[3][1] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[3][1]->w, imgBody[3][1]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmL[3][1], NULL, imgFull[3][1], NULL);
+    SDL_BlitSurface(imgBody[3][1], NULL, imgFull[3][1], NULL);
+    SDL_BlitSurface(imgArmR[3][1], NULL, imgFull[3][1], NULL);
+    SDL_BlitSurface(imgHead[3][1], NULL, imgFull[3][1], NULL);
+    SDL_BlitSurface(imgHair[3][1], NULL, imgFull[3][1], NULL);
+
+    if (imgFull[3][1]) textFull[3][1] = SDL_CreateTextureFromSurface(renderer, imgFull[3][1]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle right full"); exit(0); }
+
+
+    //--- front-right ---//
+
+    //--- idle ---//
+    imgHair[0][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/idle/hair.png").c_str());
+    if (imgHair[0][1.5]) textHair[0][1.5] = SDL_CreateTextureFromSurface(renderer, imgHair[0][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-right hair.png"); exit(0); }
+
+    //imgHead[0][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/idle/head.png").c_str());
+    //if (imgHead[0][1.5]) textHead[0][1.5] = SDL_CreateTextureFromSurface(renderer, imgHead[0][1.5]);
+    //else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-right head.png"); exit(0); }
+
+    imgBody[0][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/idle/body.png").c_str());
+    if (imgBody[0][1.5]) textBody[0][1.5] = SDL_CreateTextureFromSurface(renderer, imgBody[0][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-right body.png"); exit(0); }
+
+    imgArmL[0][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/idle/arml.png").c_str());
+    if (imgArmL[0][1.5]) textArmL[0][1.5] = SDL_CreateTextureFromSurface(renderer, imgArmL[0][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-right arml.png"); exit(0); }
+
+    imgArmR[0][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/idle/armr.png").c_str());
+    if (imgArmR[0][1.5]) textArmR[0][1.5] = SDL_CreateTextureFromSurface(renderer, imgArmR[0][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-right armr.png"); exit(0); }
+
+    imgFull[0][1.5] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[0][1.5]->w, imgBody[0][1.5]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmL[0][1.5], NULL, imgFull[0][1.5], NULL);
+    SDL_BlitSurface(imgBody[0][1.5], NULL, imgFull[0][1.5], NULL);
+    SDL_BlitSurface(imgArmR[0][1.5], NULL, imgFull[0][1.5], NULL);
+    //SDL_BlitSurface(imgHead[0][1.5], NULL, imgFull[0][1.5], NULL);
+    SDL_BlitSurface(imgHair[0][1.5], NULL, imgFull[0][1.5], NULL);
+
+    if (imgFull[0][1.5]) textFull[0][1.5] = SDL_CreateTextureFromSurface(renderer, imgFull[0][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-right full"); exit(0); }
+
+    //--- run ---//
+
+    imgHair[1][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/run/hair.png").c_str());
+    if (imgHair[1][1.5]) textHair[1][1.5] = SDL_CreateTextureFromSurface(renderer, imgHair[1][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run front-right hair.png"); exit(0); }
+
+    //imgHead[1][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/run/head.png").c_str());
+    //if (imgHead[1][1.5]) textHead[1][1.5] = SDL_CreateTextureFromSurface(renderer, imgHead[1][1.5]);
+    //else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run front-right head.png"); exit(0); }
+
+    imgBody[1][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/run/body.png").c_str());
+    if (imgBody[1][1.5]) textBody[1][1.5] = SDL_CreateTextureFromSurface(renderer, imgBody[1][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run front-right body.png"); exit(0); }
+
+    imgArmL[1][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/run/arml.png").c_str());
+    if (imgArmL[1][1.5]) textArmL[1][1.5] = SDL_CreateTextureFromSurface(renderer, imgArmL[1][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run front-right arml.png"); exit(0); }
+
+    imgArmR[1][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/run/armr.png").c_str());
+    if (imgArmR[1][1.5]) textArmR[1][1.5] = SDL_CreateTextureFromSurface(renderer, imgArmR[1][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run front-right armr.png"); exit(0); }
+
+    imgFull[1][1.5] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[1][1.5]->w, imgBody[1][1.5]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmL[1][1.5], NULL, imgFull[1][1.5], NULL);
+    SDL_BlitSurface(imgBody[1][1.5], NULL, imgFull[1][1.5], NULL);
+    SDL_BlitSurface(imgArmR[1][1.5], NULL, imgFull[1][1.5], NULL);
+    //SDL_BlitSurface(imgHead[1][1.5], NULL, imgFull[1][1.5], NULL);
+    SDL_BlitSurface(imgHair[1][1.5], NULL, imgFull[1][1.5], NULL);
+
+    if (imgFull[1][1.5]) textFull[1][1.5] = SDL_CreateTextureFromSurface(renderer, imgFull[1][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-right full"); exit(0); }
+
+
+    //--- auto attack ---//
+
+    imgHair[3][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/aa/hair.png").c_str());
+    if (imgHair[3][1.5]) textHair[3][1.5] = SDL_CreateTextureFromSurface(renderer, imgHair[3][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa front-right hair.png"); exit(0); }
+
+    //imgHead[3][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/aa/head.png").c_str());
+    //if (imgHead[3][1.5]) textHead[3][1.5] = SDL_CreateTextureFromSurface(renderer, imgHead[3][1.5]);
+    //else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa front-right head.png"); exit(0); }
+
+    imgBody[3][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/aa/body.png").c_str());
+    if (imgBody[3][1.5]) textBody[3][1.5] = SDL_CreateTextureFromSurface(renderer, imgBody[3][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa front-right body.png"); exit(0); }
+
+    imgArmL[3][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/aa/arml.png").c_str());
+    if (imgArmL[3][1.5]) textArmL[3][1.5] = SDL_CreateTextureFromSurface(renderer, imgArmL[3][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa front-right arml.png"); exit(0); }
+
+    imgArmR[3][1.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-right/aa/armr.png").c_str());
+    if (imgArmR[3][1.5]) textArmR[3][1.5] = SDL_CreateTextureFromSurface(renderer, imgArmR[3][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa front-right armr.png"); exit(0); }
+
+    imgFull[3][1.5] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[3][1.5]->w, imgBody[3][1.5]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmL[3][1.5], NULL, imgFull[3][1.5], NULL);
+    SDL_BlitSurface(imgBody[3][1.5], NULL, imgFull[3][1.5], NULL);
+    SDL_BlitSurface(imgArmR[3][1.5], NULL, imgFull[3][1.5], NULL);
+    //SDL_BlitSurface(imgHead[3][1.5], NULL, imgFull[3][1.5], NULL);
+    SDL_BlitSurface(imgHair[3][1.5], NULL, imgFull[3][1.5], NULL);
+
+    if (imgFull[3][1.5]) textFull[3][1.5] = SDL_CreateTextureFromSurface(renderer, imgFull[3][1.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-right full"); exit(0); }
+
+
+
+
+    //--- front-left ---//
+
+    //--- idle ---//
+    imgHair[0][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/idle/hair.png").c_str());
+    if (imgHair[0][2.5]) textHair[0][2.5] = SDL_CreateTextureFromSurface(renderer, imgHair[0][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-left hair.png"); exit(0); }
+
+    //imgHead[0][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/idle/head.png").c_str());
+    //if (imgHead[0][2.5]) textHead[0][2.5] = SDL_CreateTextureFromSurface(renderer, imgHead[0][2.5]);
+    //else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-left head.png"); exit(0); }
+
+    imgBody[0][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/idle/body.png").c_str());
+    if (imgBody[0][2.5]) textBody[0][2.5] = SDL_CreateTextureFromSurface(renderer, imgBody[0][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-left body.png"); exit(0); }
+
+    imgArmL[0][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/idle/arml.png").c_str());
+    if (imgArmL[0][2.5]) textArmL[0][2.5] = SDL_CreateTextureFromSurface(renderer, imgArmL[0][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-left arml.png"); exit(0); }
+
+    imgArmR[0][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/idle/armr.png").c_str());
+    if (imgArmR[0][2.5]) textArmR[0][2.5] = SDL_CreateTextureFromSurface(renderer, imgArmR[0][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-left armr.png"); exit(0); }
+
+    imgFull[0][2.5] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[0][2.5]->w, imgBody[0][2.5]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmR[0][2.5], NULL, imgFull[0][2.5], NULL);
+    SDL_BlitSurface(imgBody[0][2.5], NULL, imgFull[0][2.5], NULL);
+    SDL_BlitSurface(imgArmL[0][2.5], NULL, imgFull[0][2.5], NULL);
+    //SDL_BlitSurface(imgHead[0][2.5], NULL, imgFull[0][2.5], NULL);
+    SDL_BlitSurface(imgHair[0][2.5], NULL, imgFull[0][2.5], NULL);
+
+    if (imgFull[0][2.5]) textFull[0][2.5] = SDL_CreateTextureFromSurface(renderer, imgFull[0][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-left full"); exit(0); }
+
+    //--- run ---//
+
+    imgHair[1][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/run/hair.png").c_str());
+    if (imgHair[1][2.5]) textHair[1][2.5] = SDL_CreateTextureFromSurface(renderer, imgHair[1][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run front-left hair.png"); exit(0); }
+
+    //imgHead[1][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/run/head.png").c_str());
+    //if (imgHead[1][2.5]) textHead[1][2.5] = SDL_CreateTextureFromSurface(renderer, imgHead[1][2.5]);
+    //else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run front-left head.png"); exit(0); }
+
+    imgBody[1][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/run/body.png").c_str());
+    if (imgBody[1][2.5]) textBody[1][2.5] = SDL_CreateTextureFromSurface(renderer, imgBody[1][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run front-left body.png"); exit(0); }
+
+    imgArmL[1][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/run/arml.png").c_str());
+    if (imgArmL[1][2.5]) textArmL[1][2.5] = SDL_CreateTextureFromSurface(renderer, imgArmL[1][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run front-left arml.png"); exit(0); }
+
+    imgArmR[1][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/run/armr.png").c_str());
+    if (imgArmR[1][2.5]) textArmR[1][2.5] = SDL_CreateTextureFromSurface(renderer, imgArmR[1][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run front-left armr.png"); exit(0); }
+
+    imgFull[1][2.5] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[1][2.5]->w, imgBody[1][2.5]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmR[1][2.5], NULL, imgFull[1][2.5], NULL);
+    SDL_BlitSurface(imgBody[1][2.5], NULL, imgFull[1][2.5], NULL);
+    SDL_BlitSurface(imgArmL[1][2.5], NULL, imgFull[1][2.5], NULL);
+    //SDL_BlitSurface(imgHead[1][2.5], NULL, imgFull[1][2.5], NULL);
+    SDL_BlitSurface(imgHair[1][2.5], NULL, imgFull[1][2.5], NULL);
+
+    if (imgFull[1][2.5]) textFull[1][2.5] = SDL_CreateTextureFromSurface(renderer, imgFull[1][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-left full"); exit(0); }
+
+
+    //--- auto attack ---//
+
+    imgHair[3][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/aa/hair.png").c_str());
+    if (imgHair[3][2.5]) textHair[3][2.5] = SDL_CreateTextureFromSurface(renderer, imgHair[3][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa front-left hair.png"); exit(0); }
+
+    //imgHead[3][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/aa/head.png").c_str());
+    //if (imgHead[3][2.5]) textHead[3][2.5] = SDL_CreateTextureFromSurface(renderer, imgHead[3][2.5]);
+    //else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa front-left head.png"); exit(0); }
+
+    imgBody[3][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/aa/body.png").c_str());
+    if (imgBody[3][2.5]) textBody[3][2.5] = SDL_CreateTextureFromSurface(renderer, imgBody[3][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa front-left body.png"); exit(0); }
+
+    imgArmL[3][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/aa/arml.png").c_str());
+    if (imgArmL[3][2.5]) textArmL[3][2.5] = SDL_CreateTextureFromSurface(renderer, imgArmL[3][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa front-left arml.png"); exit(0); }
+
+    imgArmR[3][2.5] = IMG_Load(string("img/entity/" + imgSrc + "/front-left/aa/armr.png").c_str());
+    if (imgArmR[3][2.5]) textArmR[3][2.5] = SDL_CreateTextureFromSurface(renderer, imgArmR[3][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa front-left armr.png"); exit(0); }
+
+    imgFull[3][2.5] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[3][2.5]->w, imgBody[3][2.5]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmR[3][2.5], NULL, imgFull[3][2.5], NULL);
+    SDL_BlitSurface(imgBody[3][2.5], NULL, imgFull[3][2.5], NULL);
+    SDL_BlitSurface(imgArmL[3][2.5], NULL, imgFull[3][2.5], NULL);
+    //SDL_BlitSurface(imgHead[3][2.5], NULL, imgFull[3][2.5], NULL);
+    SDL_BlitSurface(imgHair[3][2.5], NULL, imgFull[3][2.5], NULL);
+
+    if (imgFull[3][2.5]) textFull[3][2.5] = SDL_CreateTextureFromSurface(renderer, imgFull[3][2.5]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle front-left full"); exit(0); }
+
+
+
+
+
+    //--- Left ---//
+
+    //--- idle ---//
+    imgHair[0][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/idle/hair.png").c_str());
+    if (imgHair[0][3]) textHair[0][3] = SDL_CreateTextureFromSurface(renderer, imgHair[0][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle left hair.png"); exit(0); }
+
+    imgHead[0][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/idle/head.png").c_str());
+    if (imgHead[0][3]) textHead[0][3] = SDL_CreateTextureFromSurface(renderer, imgHead[0][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle left head.png"); exit(0); }
+
+    imgBody[0][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/idle/body.png").c_str());
+    if (imgBody[0][3]) textBody[0][3] = SDL_CreateTextureFromSurface(renderer, imgBody[0][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle left body.pngpp"); exit(0); }
+
+    imgArmL[0][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/idle/arml.png").c_str());
+    if (imgArmL[0][3]) textArmL[0][3] = SDL_CreateTextureFromSurface(renderer, imgArmL[0][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle left arml.png"); exit(0); }
+
+    imgArmR[0][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/idle/armr.png").c_str());
+    if (imgArmR[0][3]) textArmR[0][3] = SDL_CreateTextureFromSurface(renderer, imgArmR[0][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle left armr.png"); exit(0); }//clear quand exit ??
+
+    imgFull[0][3] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[0][3]->w, imgBody[0][3]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    
+
+    SDL_BlitSurface(imgArmR[0][3], NULL, imgFull[0][3], NULL);
+    SDL_BlitSurface(imgBody[0][3], NULL, imgFull[0][3], NULL);
+    SDL_BlitSurface(imgArmL[0][3], NULL, imgFull[0][3], NULL);
+    SDL_BlitSurface(imgHead[0][3], NULL, imgFull[0][3], NULL);
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 6; j++)
+        {
+            SDL_Rect srcRect = { 500 * i, 500 * j, 500, 500 };
+            SDL_Rect dstRect = { 500 * i, 500 * j, 500, 500 };
+            SDL_BlitSurface(imgHair[0][3], &srcRect, imgFull[0][3], &dstRect);
+        }
+    }
+
+    if (imgFull[0][3]) textFull[0][3] = SDL_CreateTextureFromSurface(renderer, imgFull[0][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle Left full"); exit(0); }
+
+    //--- run ---//
+
+    imgHair[1][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/run/hair.png").c_str());
+    if (imgHair[1][3]) textHair[1][3] = SDL_CreateTextureFromSurface(renderer, imgHair[1][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run left hair.png"); exit(0); }
+
+    imgHead[1][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/run/head.png").c_str());
+    if (imgHead[1][3]) textHead[1][3] = SDL_CreateTextureFromSurface(renderer, imgHead[1][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run left head.png"); exit(0); }
+
+    imgBody[1][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/run/body.png").c_str());
+    if (imgBody[1][3]) textBody[1][3] = SDL_CreateTextureFromSurface(renderer, imgBody[1][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run left body.png"); exit(0); }
+
+    imgArmL[1][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/run/arml.png").c_str());
+    if (imgArmL[1][3]) textArmL[1][3] = SDL_CreateTextureFromSurface(renderer, imgArmL[1][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run left arml.png"); exit(0); }
+
+    imgArmR[1][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/run/armr.png").c_str());
+    if (imgArmR[1][3]) textArmR[1][3] = SDL_CreateTextureFromSurface(renderer, imgArmR[1][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> run left armr.png"); exit(0); }
+
+    imgFull[1][3] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[1][3]->w, imgBody[1][3]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmR[1][3], NULL, imgFull[1][3], NULL);
+    SDL_BlitSurface(imgBody[1][3], NULL, imgFull[1][3], NULL);
+    SDL_BlitSurface(imgArmL[1][3], NULL, imgFull[1][3], NULL);
+    SDL_BlitSurface(imgHead[1][3], NULL, imgFull[1][3], NULL);
+    SDL_BlitSurface(imgHair[1][3], NULL, imgFull[1][3], NULL);
+
+    if (imgFull[1][3]) textFull[1][3] = SDL_CreateTextureFromSurface(renderer, imgFull[1][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle Left full"); exit(0); }
+
+    
+
+    //--- auto attack ---//
+
+    imgHair[3][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/aa/hair.png").c_str());
+    if (imgHair[3][3]) textHair[3][3] = SDL_CreateTextureFromSurface(renderer, imgHair[3][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa left hair.png"); exit(0); }
+
+    imgHead[3][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/aa/head.png").c_str());
+    if (imgHead[3][3]) textHead[3][3] = SDL_CreateTextureFromSurface(renderer, imgHead[3][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa left head.png"); exit(0); }
+
+    imgBody[3][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/aa/body.png").c_str());
+    if (imgBody[3][3]) textBody[3][3] = SDL_CreateTextureFromSurface(renderer, imgBody[3][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa left body.png"); exit(0); }
+
+    imgArmL[3][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/aa/arml.png").c_str());
+    if (imgArmL[3][3]) textArmL[3][3] = SDL_CreateTextureFromSurface(renderer, imgArmL[3][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa left arml.png"); exit(0); }
+
+    imgArmR[3][3] = IMG_Load(string("img/entity/" + imgSrc + "/left/aa/armr.png").c_str());
+    if (imgArmR[3][3]) textArmR[3][3] = SDL_CreateTextureFromSurface(renderer, imgArmR[3][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> aa left armr.png"); exit(0); }
+
+    imgFull[3][3] = SDL_CreateRGBSurfaceWithFormat(0, imgBody[3][3]->w, imgBody[3][3]->h, 32, SDL_PIXELFORMAT_RGBA32);
+
+    SDL_BlitSurface(imgArmR[3][3], NULL, imgFull[3][3], NULL);
+    SDL_BlitSurface(imgBody[3][3], NULL, imgFull[3][3], NULL);
+    SDL_BlitSurface(imgArmL[3][3], NULL, imgFull[3][3], NULL);
+    SDL_BlitSurface(imgHead[3][3], NULL, imgFull[3][3], NULL);
+    SDL_BlitSurface(imgHair[3][3], NULL, imgFull[3][3], NULL);
+
+    if (imgFull[3][3]) textFull[3][3] = SDL_CreateTextureFromSurface(renderer, imgFull[3][3]);
+    else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> idle Left full"); exit(0); }
+
+
+    // Obtenir le temps de fin
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // Calculer la durée d'exécution
+    std::chrono::duration<double> duration = end - start;
+
+    // Afficher la durée
+    std::cout << "La fonction a pris " << duration.count() << " secondes pour s'exécuter." << std::endl;
 
 
 
@@ -125,45 +586,35 @@ Entity::Entity(std::string name, float xMap, float yMap, int id, short faction, 
     if (imgRessource) textRessource = SDL_CreateTextureFromSurface(renderer, imgRessource);
     else { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to load image: Entity -> mana.png");     exit(0); }
 
-    string src = "";
-    for (float i = 0; i < 4; i += 0.5)
-    {
-        if      (i == 0)   img[0][i][0] = IMG_Load(std::string("img/entity/" + imgSrc + "/back/stand/0.png").c_str());//mettre dans classe fille ou faire un truc générique qui charge dans la classe fille avec le chemin dédié à la classe
-        else if (i == 0.5) img[0][i][0] = IMG_Load(std::string("img/entity/" + imgSrc + "/right/stand/0.png").c_str());
-        else if (i == 1)   img[0][i][0] = IMG_Load(std::string("img/entity/" + imgSrc + "/right/stand/0.png").c_str());
-        else if (i == 1.5) img[0][i][0] = IMG_Load(std::string("img/entity/" + imgSrc + "/right/stand/0.png").c_str());
-        else if (i == 2)   img[0][i][0] = IMG_Load(std::string("img/entity/" + imgSrc + "/front/stand/0.png").c_str());
-        else if (i == 2.5) img[0][i][0] = IMG_Load(std::string("img/entity/" + imgSrc + "/left/stand/0.png").c_str());
-        else if (i == 3)   img[0][i][0] = IMG_Load(std::string("img/entity/" + imgSrc + "/left/stand/0.png").c_str());
-        else if (i == 3.5) img[0][i][0] = IMG_Load(std::string("img/entity/" + imgSrc + "/left/stand/0.png").c_str());
-        
-        if (img[0][i][0]) text[0][i][0] = SDL_CreateTextureFromSurface(renderer, img[0][i][0]);
-        else             { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, std::string("Failed to load image: " + std::to_string(i)).c_str());   exit(0); }
-        
-        for (int j = 0; j < 12; j++)
-        {
-            if      (i == 0) src = "img/entity/" + imgSrc + "/back/run/";
-            else if (i == 0.5 || i == 1 || i == 1.5) src = "img/entity/" + imgSrc + "/right/run/";
-            else if (i == 2) src = "img/entity/" + imgSrc + "/front/run/";
-            else if (i == 2.5 || i == 3 || i == 3.5) src = "img/entity/" + imgSrc + "/left/run/";
-
-            src += to_string(j + 1) + ".png";
-            img[1][i][j] = IMG_Load(src.c_str());
-
-            if (img[1][i][j]) text[1][i][j] = SDL_CreateTextureFromSurface(renderer, img[1][i][j]);
-            else              { SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, std::string("Failed to load image: " + src).c_str()); exit(0); }
-
-            if ( i == 0 && j == 9)                                                              break;
-            if ((i == 0.5 || i == 1 || i == 1.5 || i == 2.5 || i == 3 || i == 3.5) && j == 11)  break;
-            if ( i == 2 && j == 8)                                                              break;
-        }
-    }
-
     spells[uti::SpellID::AA] = new AutoAttack(renderer);
     img[uti::SpellID::AA]    = spells[uti::SpellID::AA]->getImg();
     text[uti::SpellID::AA]   = spells[uti::SpellID::AA]->getText();
 
     updateBoxes();
+
+    for (int i = 0; i < 100; i++)
+    {
+        for (float j = 0; j < 4; j += 0.5)
+        {
+            if (imgBody[i][j])//pour vérifier le i car on prend un nombre large d'animation ID, pas ouf
+            {
+                SDL_FreeSurface(imgHair[i][j]);
+                SDL_DestroyTexture(textHair[i][j]);
+
+                SDL_FreeSurface(imgHead[i][j]);
+                SDL_DestroyTexture(textHead[i][j]);
+
+                SDL_FreeSurface(imgBody[i][j]);
+                SDL_DestroyTexture(textBody[i][j]);
+
+                SDL_FreeSurface(imgArmR[i][j]);
+                SDL_DestroyTexture(textArmR[i][j]);
+
+                SDL_FreeSurface(imgArmL[i][j]);
+                SDL_DestroyTexture(textArmL[i][j]);
+            }
+        }
+    }
 }
 
 Entity::~Entity()
@@ -174,8 +625,8 @@ Entity::~Entity()
         SDL_DestroyTexture(text[0][i][0]);
         for (int j = 0; j < IMG_SIZE; j++)
         {
-            SDL_FreeSurface(img[1][i][j]);
-            SDL_DestroyTexture(text[1][i][j]);
+            SDL_FreeSurface(img[0.5][i][j]);
+            SDL_DestroyTexture(text[0.5][i][j]);
         }
     }
 
@@ -188,9 +639,8 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
     //--- idle animation ---//
     if (!moving && !spellUsed) 
     { 
-
-        if (step < 23 * animationSpeed)  step++;
-        else                             step = 0;
+        if (step < 23 * uti::animationSpeeds[uti::SpellID::IDLE])  step++;
+        else                                                       step = 0;
         return; 
     }
 
@@ -274,38 +724,34 @@ void Entity::move(vector<Element*>& v_elements, vector<Element*>& v_elements_sol
 
     if (!spellUsed)
     {
-        if (dir == 0)
-            if (step < 9 * animationSpeed)  step++;
-            else                            step = 0;
-        else if (dir == 1)
-            if (step < 11 * animationSpeed) step++;
-            else                            step = 0;
-        else if (dir == 2)
-            if (step < 8 * animationSpeed)  step++;
-            else                            step = 0;
-        else if (dir == 3)
-            if (step < 11 * animationSpeed) step++;
-            else                            step = 0;
-        else if (dir == 0.5)
-            if (step < 11 * animationSpeed) step++;
-            else                            step = 0;
-        else if (dir == 1.5)
-            if (step < 11 * animationSpeed) step++;
-            else                            step = 0;
-        else if (dir == 2.5)
-            if (step < 11 * animationSpeed) step++;
-            else                            step = 0;
-        else if (dir == 3.5)
-            if (step < 11 * animationSpeed) step++;
-            else                            step = 0;
+        if (step < 23 * animationSpeed) step++;
+        else                            step = 0;
     }
     else
     {
-        if(spellUsed) spellUsed->run(*this);
+        if(spellUsed)  spellUsed->run(*this);
         if (!spellUsed) sendSpellData = true;//si pointeur pas alloué alors on vient de le clear donc spell terminé
     }
 
     update();
+}
+
+short Entity::getStep()
+{
+    short animationSpeed = 0;
+    if (!spellUsed)
+    {
+        if (xRate == 0 && yRate == 0) animationSpeed = uti::animationSpeeds[uti::SpellID::IDLE];
+        else if (aaActive)                 animationSpeed = uti::animationSpeeds[uti::SpellID::AA];
+        else if (xRate != 0 || yRate != 0) animationSpeed = uti::animationSpeeds[uti::SpellID::RUN];
+    }
+    else
+    {
+        if (aaActive) animationSpeed = uti::animationSpeeds[uti::SpellID::AA];
+        else          animationSpeed = uti::animationSpeeds[spellUsed->getID()];
+    }
+
+    return this->step / animationSpeed;
 }
 
 bool Entity::inClickBox(int x, int y)

@@ -14,6 +14,7 @@
 #include "Whirlwind.h"
 #include "AutoAttack.h"
 #include "Push.h"
+#include "BloodFury.h"
 //faire un fichier avec tous les includes par classe de personnage pour ne pas avoir à tout include ??
 
 #define IMG_SIZE 16
@@ -46,7 +47,7 @@ class Entity : public Element
 		float		 getPseudoX()         { return this->x + 125 - this->pseudo.getWidth() / 2;			      }
 		float		 getPseudoY()         { return this->y + 15;											  }
 		string		 getCategory()        { return uti::categories[uti::Language::FR][uti::Category::PLAYER]; }
-		short		 getStep()            { return this->step / animationSpeed;							  }
+		short		 getStep();
 		short		 getFlatStep()		  { return this->step;												  }
 		SDL_Rect	 getPos()             { return this->pos;												  }
 		float      	 getX()		          { return this->x;												      }
@@ -120,6 +121,7 @@ class Entity : public Element
 		void resetTarget() { this->target = nullptr; }
 		void setStaticSpellTarget(uti::Point p) { this->staticSpellTarget = p; }
 		void setDir(float dir) { this->dir = dir; }
+		void scaleSize(float rate) { pos.w *= rate; pos.h *= rate; }
 
 		void setPos(float x, float y);
 
@@ -136,7 +138,7 @@ class Entity : public Element
 		bool check_collisions(int x, int y) override;
 
 	protected:
-		short id = 0, health = 0, animationSpeed = 15;
+		short id = 0, health = 0, animationSpeed = 15, animationPause = 0;
 
 		Pseudo pseudo;
 		SDL_Surface* imgPortrait   = nullptr;
@@ -161,6 +163,7 @@ class Entity : public Element
 		bool alive = true, moving = false/*, spellActive = false*/, aaActive = false, cancelAA = false, drawUI = false;
 
 		short animationID = 0;
+
 		map <short, map<float, SDL_Surface*[30]>> img;
 		map <short, map<float, SDL_Texture*[30]>> text;
 
@@ -179,10 +182,15 @@ class Entity : public Element
 		map <short, map<float, SDL_Surface*>> imgArmR;
 		map <short, map<float, SDL_Texture*>> textArmR;
 
+		map <short, map<float, SDL_Surface*>> imgFull;
+		map <short, map<float, SDL_Texture*>> textFull;
+
 		SDL_Rect clickBox{ 0, 0, 0, 0 };
 
 		Entity* target = nullptr;
 		uti::Point staticSpellTarget = { 0, 0 };
 		map<short, Spell*> spells;
 		Spell* spellUsed;
+
+		
 };
